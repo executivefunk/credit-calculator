@@ -133,7 +133,12 @@
           <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
           <li>Plan B: ${planB}</li>
           <li>Plan C: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
-          <li>Plan D: 3/week for 8 weeks (to unlock 4 credit max), then adjust</li>
+          ${(() => {
+  const creditsAfter3PerWeek = 3 * 8;
+  const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
+  const weeksAt4 = Math.ceil(remainingCredits / 4);
+  return `<li>Plan D: 3/week for 8 weeks (to unlock 4 credits a week max), then ${weeksAt4} week(s) of 4/week</li>`;
+})()}
         </ul>
       `;
 
