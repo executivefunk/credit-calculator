@@ -113,9 +113,11 @@
       const remainder = totalCredits % 3;
       let planB = "";
       if (remainder === 0) {
-        planB = `3 credits/week for ${fullWeeksAt3} weeks`;
+        const totalWeeks = fullWeeksAt3;
+        planB = `3 credits/week for ${fullWeeksAt3} weeks - (${totalWeeks} weeks total)`;
       } else {
-        planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''}`;
+        const totalWeeks = fullWeeksAt3 + 1;
+        planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
       const result = `
