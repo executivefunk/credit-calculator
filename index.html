@@ -142,7 +142,7 @@
   const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
   const fullWeeksAt4 = Math.floor(remainingCredits / 4);
   const remainder = remainingCredits % 4;
-  let plan = `Plan D: 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
+  let plan = `Plan D (Special Approval Needed): 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
   if (remainder > 0) {
     plan += ` + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''}`;
   }
