@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,7 +122,15 @@
         <p><strong>Workflow Options:</strong></p>
         <ul>
           <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
-          <li>Plan B: 3 credits/week for ${Math.floor(totalCredits / 3)} weeks</li>
+          ${(() => {
+            const fullWeeksAt3 = Math.floor(totalCredits / 3);
+            const remainder = totalCredits % 3;
+            if (remainder === 0) {
+              return `<li>Plan B: 3 credits/week for ${fullWeeksAt3} weeks</li>`;
+            } else {
+              return `<li>Plan B: 3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''}</li>`;
+            }
+          })()}
           <li>Plan C: 3/week for 8 weeks (to unlock 4 credit max), then adjust</li>
           <li>Plan D: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
         </ul>
@@ -134,3 +141,4 @@
   </script>
 </body>
 </html>
+
