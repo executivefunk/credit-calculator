@@ -121,7 +121,7 @@
         planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
-      const oneCreditWeeks = Math.floor((weeksRemaining * 2 - totalCredits));
+      const oneCreditWeeks = Math.max(0, Math.floor((weeksRemaining * 2 - totalCredits)));
       const creditsAfter3PerWeek = 3 * 8;
       const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
       const fullWeeksAt4 = Math.floor(remainingCredits / 4);
