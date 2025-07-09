@@ -110,7 +110,7 @@
 
       const strongStart = startWeek <= 10 ? `<p><strong>Strong Start Tip:</strong> Try completing 3 credits/week for the first 6 weeks. You can slow down later.</p>` : "";
 
-      const oneCreditWeeks = Math.max(0, weeksRemaining * 2 - totalCredits);
+      const oneCreditWeeks = Math.max(0, Math.min(totalCredits, weeksRemaining, weeksRemaining * 2 - totalCredits));
 
       const fullWeeksAt3 = Math.floor(totalCredits / 3);
       const remainder = totalCredits % 3;
