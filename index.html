@@ -121,6 +121,19 @@
         planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
+      const oneCreditWeeks = Math.floor((weeksRemaining * 2 - totalCredits));
+      const creditsAfter3PerWeek = 3 * 8;
+      const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
+      const fullWeeksAt4 = Math.floor(remainingCredits / 4);
+      const remainingAfter4 = remainingCredits % 4;
+      const totalDWeeks = 8 + fullWeeksAt4 + (remainingAfter4 > 0 ? 1 : 0);
+
+      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits/week max), then ${fullWeeksAt4} week(s) of 4/week`;
+      if (remainingAfter4 > 0) {
+        planD += ` + 1 week of ${remainingAfter4} credit${remainingAfter4 > 1 ? 's' : ''}`;
+      }
+      planD += ` - (${totalDWeeks} weeks total)`;
+
       const result = `
         <p><strong>Credits Needed:</strong> ${totalCredits}</p>
         <p><strong>Weeks Remaining:</strong> ${weeksRemaining}</p>
@@ -134,6 +147,8 @@
         <ul>
           <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
           <li>Plan B: ${planB}</li>
+          <li>Plan C: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
+          <li>${planD}</li>
         </ul>
       `;
 
