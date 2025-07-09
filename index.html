@@ -79,34 +79,24 @@
 
       const weeklyAvg = (totalCredits / weeksRemaining).toFixed(2);
       const weeklyAvgNum = parseFloat(weeklyAvg);
-      const weeklyAvgNum = parseFloat(weeklyAvg);
+
       let suggestion = "";
+      let riskLevel = "✅ Low Risk";
+
       if (weeklyAvgNum <= 2.00) {
         suggestion = `✅ You’re on track! Aim to turn in 2 credits a week to stay steady and finish on time.`;
       } else if (weeklyAvgNum > 2.00 && weeklyAvgNum <= 2.50) {
         suggestion = `⚠️ You’ll need to do a bit more than 2 each week. Try turning in 3 credits weekly to get ahead and lower your weekly credit load.`;
+        riskLevel = "⚠️ Moderate Risk";
       } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
         suggestion = `⚠️ You’re getting close to the weekly credit limit of 3. Try turning in 3 credits early on so you can lower your credit load and avoid burnout later.`;
+        riskLevel = "⚠️ Moderate–High Risk";
       } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
         suggestion = `⚠️ You’re getting very close to the weekly credit limit of 3. Try turning in 3 credits now so you can lower your credit load.`;
+        riskLevel = "⚠️ High Risk – Near Limit";
       } else {
         suggestion = `🚨 This plan needs 3 or more credits every week without any breaks. That’s a challenging pace, and most students need extra support to manage it. Talk with your teacher to build a plan that works for you and gives you backup options.`;
-      } credits/week. This is more than the normal weekly max. Speak with your teacher.`;
-      }
-
-      let warning = "";
-      if (endWeek > 46) {
-        warning = `<div class='warning'>⚠️ You selected a week beyond the graduation deadline (Week 46). If you're trying to finish after graduation, please speak with your teacher about your plan.</div>`;
-      }
-
-      const bufferWeeks = endWeek <= 46 ? 46 - endWeek : 99;
-      let bufferWarning = bufferWeeks < 2 ? `<div class='warning'>⚠️ You are planning to finish very close to the graduation deadline. Consider building in 2+ buffer weeks in case something comes up.</div>` : "";
-
-      const oneCreditWeeks = Math.max(Math.floor((weeksRemaining * 2 - totalCredits)), 0);
-
-      let riskLevel = "✅ Low Risk";
-      if (weeklyAvgNum > 2.00 && weeklyAvgNum <= 2.50) {
-        riskLevel = "⚠️ Moderate Risk";
+        riskLevel = "🚨 High Risk";
       } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
         riskLevel = "⚠️ Moderate–High Risk";
       } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
