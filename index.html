@@ -101,14 +101,16 @@
 
       let bufferWarning = "";
       if (endWeek === 46) {
-        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish right at the deadline. Try to finish by <strong>Week 44 or earlier</strong> to give yourself a buffer in case anything unexpected comes up.</div>`;
+        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish right at the deadline. Try to finish by Week 44 or earlier to give yourself a buffer in case anything unexpected comes up.</div>`;
       } else if (endWeek === 45) {
-        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish really close to the deadline. Try to finish by <strong>Week 44 or earlier</strong> to give yourself a buffer in case anything unexpected comes up.</div>`;
+        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish really close to the deadline. Try to finish by Week 44 or earlier to give yourself a buffer in case anything unexpected comes up.</div>`;
       } else if (endWeek > 46) {
         bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> Week 46 is the last week to turn in credits to walk in the graduation ceremony. You’ve selected a week after that — talk with your teacher to make sure your plan still works.</div>`;
       }
 
       const strongStart = startWeek <= 10 ? `<p><strong>Strong Start Tip:</strong> Try completing 3 credits/week for the first 6 weeks. You can slow down later.</p>` : "";
+
+      const oneCreditWeeks = Math.max(0, weeksRemaining * 2 - totalCredits);
 
       const fullWeeksAt3 = Math.floor(totalCredits / 3);
       const remainder = totalCredits % 3;
@@ -121,18 +123,16 @@
         planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
-      const oneCreditWeeks = Math.max(0, Math.floor((weeksRemaining * 2 - totalCredits)));
       const creditsAfter3PerWeek = 3 * 8;
       const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
       const fullWeeksAt4 = Math.floor(remainingCredits / 4);
-      const remainingAfter4 = remainingCredits % 4;
-      const totalDWeeks = 8 + fullWeeksAt4 + (remainingAfter4 > 0 ? 1 : 0);
-
-      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits/week max), then ${fullWeeksAt4} week(s) of 4/week`;
-      if (remainingAfter4 > 0) {
-        planD += ` + 1 week of ${remainingAfter4} credit${remainingAfter4 > 1 ? 's' : ''}`;
+      const remainderD = remainingCredits % 4;
+      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
+      if (remainderD > 0) {
+        planD += ` + 1 week of ${remainderD} credit${remainderD > 1 ? 's' : ''}`;
       }
-      planD += ` - (${totalDWeeks} weeks total)`;
+      const totalWeeksD = 8 + fullWeeksAt4 + (remainderD > 0 ? 1 : 0);
+      planD += ` - (${totalWeeksD} weeks total)`;
 
       const result = `
         <p><strong>Credits Needed:</strong> ${totalCredits}</p>
