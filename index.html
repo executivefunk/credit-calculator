@@ -78,16 +78,19 @@
       }
 
       const weeklyAvg = (totalCredits / weeksRemaining).toFixed(2);
+      const weeklyAvgNum = parseFloat(weeklyAvg);
       let suggestion = "";
-
-      if (weeklyAvg <= 1) {
-        suggestion = `✅ You can average ${weeklyAvg} credits/week. A slow & steady plan will work well.`;
-      } else if (weeklyAvg <= 2) {
-        suggestion = `✅ You need to complete around ${weeklyAvg} credits/week. Stay consistent at 2/week.`;
-      } else if (weeklyAvg <= 3) {
-        suggestion = `⚠️ You need ${weeklyAvg} credits/week. You must complete close to 3 each week.`;
+      if (weeklyAvgNum <= 2.00) {
+        suggestion = `✅ You’re on track! Aim to turn in 2 credits a week to stay steady and finish on time.`;
+      } else if (weeklyAvgNum > 2.00 && weeklyAvgNum <= 2.50) {
+        suggestion = `⚠️ You’ll need to do a bit more than 2 each week. Try turning in 3 credits weekly to get ahead and lower your weekly credit load.`;
+      } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
+        suggestion = `⚠️ You’re getting close to the weekly credit limit of 3. Try turning in 3 credits early on so you can lower your credit load and avoid burnout later.`;
+      } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
+        suggestion = `⚠️ You’re getting very close to the weekly credit limit of 3. Try turning in 3 credits now so you can lower your credit load.`;
       } else {
-        suggestion = `🚨 You need ${weeklyAvg} credits/week. This is more than the normal weekly max. Speak with your teacher.`;
+        suggestion = `🚨 This plan needs 3 or more credits every week without any breaks. That’s a challenging pace, and most students need extra support to manage it. Talk with your teacher to build a plan that works for you and gives you backup options.`;
+      } credits/week. This is more than the normal weekly max. Speak with your teacher.`;
       }
 
       let warning = "";
@@ -101,6 +104,15 @@
       const oneCreditWeeks = Math.max(Math.floor((weeksRemaining * 2 - totalCredits)), 0);
 
       let riskLevel = "✅ Low Risk";
+      if (weeklyAvgNum > 2.00 && weeklyAvgNum <= 2.50) {
+        riskLevel = "⚠️ Moderate Risk";
+      } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
+        riskLevel = "⚠️ Moderate–High Risk";
+      } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
+        riskLevel = "⚠️ High Risk – Near Limit";
+      } else if (weeklyAvgNum >= 3.00) {
+        riskLevel = "🚨 High Risk";
+      }
       if (weeklyAvg > 2.5 && weeklyAvg <= 3) {
         riskLevel = "⚠️ Moderate Risk";
       } else if (weeklyAvg > 3) {
