@@ -97,17 +97,6 @@
       } else {
         suggestion = `🚨 This plan needs 3 or more credits every week without any breaks. That’s a challenging pace, and most students need extra support to manage it. Talk with your teacher to build a plan that works for you and gives you backup options.`;
         riskLevel = "🚨 High Risk";
-      } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
-        riskLevel = "⚠️ Moderate–High Risk";
-      } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
-        riskLevel = "⚠️ High Risk – Near Limit";
-      } else if (weeklyAvgNum >= 3.00) {
-        riskLevel = "🚨 High Risk";
-      }
-      if (weeklyAvg > 2.5 && weeklyAvg <= 3) {
-        riskLevel = "⚠️ Moderate Risk";
-      } else if (weeklyAvg > 3) {
-        riskLevel = "🚨 High Risk";
       }
 
       const strongStart = startWeek <= 10 ? `<p><strong>Strong Start Tip:</strong> Try completing 3 credits/week for the first 6 weeks. You can slow down later.</p>` : "";
@@ -123,39 +112,33 @@
         planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
+      const oneCreditWeeks = Math.max(Math.floor((weeksRemaining * 2 - totalCredits)), 0);
+
+      const creditsAfter3PerWeek = 3 * 8;
+      const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
+      const fullWeeksAt4 = Math.floor(remainingCredits / 4);
+      const remainder4 = remainingCredits % 4;
+      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
+      if (remainder4 > 0) {
+        planD += ` + 1 week of ${remainder4} credit${remainder4 > 1 ? 's' : ''}`;
+      }
+      const totalWeeksD = 8 + fullWeeksAt4 + (remainder4 > 0 ? 1 : 0);
+      planD += ` - (${totalWeeksD} weeks total)`;
+
       const result = `
         <p><strong>Credits Needed:</strong> ${totalCredits}</p>
         <p><strong>Weeks Remaining:</strong> ${weeksRemaining}</p>
         <p><strong>Average Credits per Week:</strong> ${weeklyAvg}</p>
         <p><strong>Risk Level:</strong> ${riskLevel}</p>
         <p><strong>Suggestion:</strong> ${suggestion}</p>
-        ${warning}
         <hr>
-        ${bufferWarning}
         ${strongStart}
         <p><strong>Workflow Options:</strong></p>
         <ul>
           <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
           <li>Plan B: ${planB}</li>
           <li>Plan C: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
-          ${(() => {
-  const creditsAfter3PerWeek = 3 * 8;
-  const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
-  const weeksAt4 = Math.ceil(remainingCredits / 4);
-  return `${(() => {
-  const creditsAfter3PerWeek = 3 * 8;
-  const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
-  const fullWeeksAt4 = Math.floor(remainingCredits / 4);
-  const remainder = remainingCredits % 4;
-  let plan = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
-  if (remainder > 0) {
-    plan += ` + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''}`;
-  }
-  const totalWeeks = 8 + fullWeeksAt4 + (remainder > 0 ? 1 : 0);
-  plan += ` - (${totalWeeks} weeks total)`;
-  return `<li>${plan}</li>`;
-})()}`;
-})()}
+          <li>${planD}</li>
         </ul>
       `;
 
