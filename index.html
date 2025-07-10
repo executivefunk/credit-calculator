@@ -46,15 +46,29 @@
       margin-top: 10px;
       border: 1px solid #f0ad4e;
     }
-    .plan-item {
-      margin-bottom: 10px;
+    .disclaimer {
+      background: #fff3cd;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ffeeba;
+      margin-top: 10px;
+      font-size: 0.95em;
+    }
+    ul li {
+      margin-bottom: 12px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Weekly Credit Calculator</h2>
-    <label for="totalCredits">How many credits do you need?</label>
+    <div class="disclaimer">
+      This calculator is designed for students who plan to graduate this school year.<br><br>
+      If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.<br><br>
+      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
+    </div>
+
+    <label for="totalCredits">How many credits do you need to finish?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
 
     <label for="startWeek">What week are you starting from? (1–52)</label>
@@ -63,7 +77,7 @@
     <label for="endWeek">Which week do you want to finish by? (1–52)</label>
     <input type="number" id="endWeek" min="1" max="52" value="46">
 
-    <button onclick="calculateCredits()" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
+    <button id="calculateBtn" onclick="calculateCredits()" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
 
     <div class="output" id="result"></div>
   </div>
@@ -113,24 +127,24 @@
 
       const strongStart = startWeek <= 10 ? `<p><strong>Strong Start Tip:</strong> Try completing 3 credits/week for the first 6 weeks. You can slow down later.</p>` : "";
 
-      const oneCreditWeeks = Math.max(0, Math.min(totalCredits, weeksRemaining, weeksRemaining * 2 - totalCredits));
+      const oneCreditWeeks = Math.max(0, Math.min(weeksRemaining, weeksRemaining * 2 - totalCredits));
 
       const fullWeeksAt3 = Math.floor(totalCredits / 3);
       const remainder = totalCredits % 3;
       let planB = "";
       if (remainder === 0) {
         const totalWeeks = fullWeeksAt3;
-        planB = `3 credits/week for ${fullWeeksAt3} weeks - (${totalWeeks} weeks total)`;
+        planB = `<strong>Plan B:</strong> 3 credits/week for ${fullWeeksAt3} weeks - (${totalWeeks} weeks total)`;
       } else {
         const totalWeeks = fullWeeksAt3 + 1;
-        planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
+        planB = `<strong>Plan B:</strong> 3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
       }
 
       const creditsAfter3PerWeek = 3 * 8;
       const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
       const fullWeeksAt4 = Math.floor(remainingCredits / 4);
       const remainderD = remainingCredits % 4;
-      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
+      let planD = `<strong style='color:red'>Plan D (Special Approval Needed):</strong> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
       if (remainderD > 0) {
         planD += ` + 1 week of ${remainderD} credit${remainderD > 1 ? 's' : ''}`;
       }
@@ -147,14 +161,24 @@
         ${strongStart}
         <hr>
         <p><strong>Workflow Options:</strong></p>
-        <div class="plan-item"><strong>Plan A:</strong> 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</div>
-        <div class="plan-item"><strong>Plan B:</strong> ${planB}</div>
-        <div class="plan-item"><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</div>
-        <div class="plan-item">${planD}</div>
+        <ul>
+          <li><strong>Plan A:</strong> 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
+          <li>${planB}</li>
+          <li><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
+          <li>${planD}</li>
+        </ul>
       `;
 
       document.getElementById("result").innerHTML = result;
     }
+
+    // Allow Enter key to trigger the Calculate button
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("calculateBtn").click();
+      }
+    });
   </script>
 </body>
 </html>
