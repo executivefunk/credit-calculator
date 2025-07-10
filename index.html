@@ -46,12 +46,34 @@
       margin-top: 10px;
       border: 1px solid #f0ad4e;
     }
+    .disclaimer {
+      background: #fff89a;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ffeeba;
+      margin-top: 10px;
+      font-size: 0.95em;
+    }
+    .footer-disclaimer {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #555;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Weekly Credit Calculator</h2>
-    <label for="totalCredits">How many credits do you need?</label>
+    <div class="disclaimer">
+      This calculator is designed for students who plan to graduate this school year.
+      <br><br>
+      If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
+      <br><br>
+      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
+    </div>
+
+    <label for="totalCredits">How many credits do you need to finish?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
 
     <label for="startWeek">What week are you starting from? (1–52)</label>
@@ -60,9 +82,13 @@
     <label for="endWeek">Which week do you want to finish by? (1–52)</label>
     <input type="number" id="endWeek" min="1" max="52" value="46">
 
-    <button onclick="calculateCredits()" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
+    <button onclick="calculateCredits()" id="calculateBtn" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
 
     <div class="output" id="result"></div>
+
+    <div class="footer-disclaimer">
+      <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
+    </div>
   </div>
 
   <script>
@@ -145,15 +171,24 @@
         <hr>
         <p><strong>Workflow Options:</strong></p>
         <ul>
-          <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
-          <li>Plan B: ${planB}</li>
-          <li>Plan C: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
+          <li><strong>Plan A:</strong> 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li><br>
+          <li><strong>Plan B:</strong> ${planB}</li><br>
+          <li><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li><br>
           <li>${planD}</li>
         </ul>
       `;
 
       document.getElementById("result").innerHTML = result;
     }
+
+    document.getElementById("calculateBtn").addEventListener("click", calculateCredits);
+
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        calculateCredits();
+      }
+    });
   </script>
 </body>
 </html>
