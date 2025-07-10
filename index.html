@@ -46,32 +46,12 @@
       margin-top: 10px;
       border: 1px solid #f0ad4e;
     }
-    .disclaimer {
-      background: #fff3cd;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ffeeba;
-      margin-top: 10px;
-      font-size: 0.95em;
-    }
-    .footer-disclaimer {
-      margin-top: 20px;
-      font-size: 0.9em;
-      color: #555;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Weekly Credit Calculator</h2>
-    <div class="disclaimer">
-      This calculator is designed for students who plan to graduate this school year.<br><br>
-      If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.<br><br>
-      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
-    </div>
-
-    <label for="totalCredits">How many credits do you need to finish?</label>
+    <label for="totalCredits">How many credits do you need?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
 
     <label for="startWeek">What week are you starting from? (1–52)</label>
@@ -80,17 +60,100 @@
     <label for="endWeek">Which week do you want to finish by? (1–52)</label>
     <input type="number" id="endWeek" min="1" max="52" value="46">
 
-    <button id="calculateBtn" onclick="calculateCredits()" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
+    <button onclick="calculateCredits()" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
 
     <div class="output" id="result"></div>
-
-    <div class="footer-disclaimer">
-      <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
-    </div>
   </div>
 
   <script>
-    // calculation logic remains unchanged here
+    function calculateCredits() {
+      const totalCredits = parseInt(document.getElementById("totalCredits").value);
+      const startWeek = parseInt(document.getElementById("startWeek").value);
+      const endWeek = parseInt(document.getElementById("endWeek").value);
+      const weeksRemaining = endWeek - startWeek + 1;
+
+      if (!totalCredits || !weeksRemaining || weeksRemaining <= 0) {
+        document.getElementById("result").innerText = "Please enter valid numbers.";
+        return;
+      }
+
+      const weeklyAvg = (totalCredits / weeksRemaining).toFixed(2);
+      const weeklyAvgNum = parseFloat(weeklyAvg);
+
+      let suggestion = "";
+      let riskLevel = "✅ Low Risk";
+
+      if (weeklyAvgNum <= 2.00) {
+        suggestion = `✅ You’re on track! Aim to turn in 2 credits a week to stay steady and finish on time.`;
+      } else if (weeklyAvgNum > 2.00 && weeklyAvgNum <= 2.50) {
+        suggestion = `⚠️ You’ll need to do a bit more than 2 each week. Try turning in 3 credits weekly to get ahead and lower your weekly credit load.`;
+        riskLevel = "⚠️ Moderate Risk";
+      } else if (weeklyAvgNum > 2.50 && weeklyAvgNum <= 2.79) {
+        suggestion = `⚠️ You’re getting close to the weekly credit limit of 3. Try turning in 3 credits early on so you can lower your credit load and avoid burnout later.`;
+        riskLevel = "⚠️ Moderate–High Risk";
+      } else if (weeklyAvgNum > 2.79 && weeklyAvgNum < 3.00) {
+        suggestion = `⚠️ You’re getting very close to the weekly credit limit of 3. Try turning in 3 credits now so you can lower your credit load.`;
+        riskLevel = "⚠️ High Risk – Near Limit";
+      } else {
+        suggestion = `🚨 This plan needs 3 or more credits every week without any breaks. That’s a challenging pace, and most students need extra support to manage it. Talk with your teacher to build a plan that works for you and gives you backup options.`;
+        riskLevel = "🚨 High Risk";
+      }
+
+      let bufferWarning = "";
+      if (endWeek === 46) {
+        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish right at the deadline. Try to finish by Week 44 or earlier to give yourself a buffer in case anything unexpected comes up.</div>`;
+      } else if (endWeek === 45) {
+        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> You’re planning to finish really close to the deadline. Try to finish by Week 44 or earlier to give yourself a buffer in case anything unexpected comes up.</div>`;
+      } else if (endWeek > 46) {
+        bufferWarning = `<div class='warning'>⚠️ <strong>Heads up:</strong> Week 46 is the last week to turn in credits to walk in the graduation ceremony. You’ve selected a week after that — talk with your teacher to make sure your plan still works.</div>`;
+      }
+
+      const strongStart = startWeek <= 10 ? `<p><strong>Strong Start Tip:</strong> Try completing 3 credits/week for the first 6 weeks. You can slow down later.</p>` : "";
+
+      const oneCreditWeeks = Math.max(0, Math.min(totalCredits, weeksRemaining, weeksRemaining * 2 - totalCredits));
+
+      const fullWeeksAt3 = Math.floor(totalCredits / 3);
+      const remainder = totalCredits % 3;
+      let planB = "";
+      if (remainder === 0) {
+        const totalWeeks = fullWeeksAt3;
+        planB = `3 credits/week for ${fullWeeksAt3} weeks - (${totalWeeks} weeks total)`;
+      } else {
+        const totalWeeks = fullWeeksAt3 + 1;
+        planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
+      }
+
+      const creditsAfter3PerWeek = 3 * 8;
+      const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
+      const fullWeeksAt4 = Math.floor(remainingCredits / 4);
+      const remainderD = remainingCredits % 4;
+      let planD = `<span style='color:red'><strong>Plan D (Special Approval Needed):</strong></span> 3/week for 8 weeks (to unlock 4 credits a week max), then ${fullWeeksAt4} week(s) of 4/week`;
+      if (remainderD > 0) {
+        planD += ` + 1 week of ${remainderD} credit${remainderD > 1 ? 's' : ''}`;
+      }
+      const totalWeeksD = 8 + fullWeeksAt4 + (remainderD > 0 ? 1 : 0);
+      planD += ` - (${totalWeeksD} weeks total)`;
+
+      const result = `
+        <p><strong>Credits Needed:</strong> ${totalCredits}</p>
+        <p><strong>Weeks Remaining:</strong> ${weeksRemaining}</p>
+        <p><strong>Average Credits per Week:</strong> ${weeklyAvg}</p>
+        <p><strong>Risk Level:</strong> ${riskLevel}</p>
+        <p><strong>Suggestion:</strong> ${suggestion}</p>
+        ${bufferWarning}
+        ${strongStart}
+        <hr>
+        <p><strong>Workflow Options:</strong></p>
+        <ul>
+          <li>Plan A: 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li>
+          <li>Plan B: ${planB}</li>
+          <li>Plan C: You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>
+          <li>${planD}</li>
+        </ul>
+      `;
+
+      document.getElementById("result").innerHTML = result;
+    }
   </script>
 </body>
 </html>
