@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Weekly Credit Calculator</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -26,12 +26,18 @@
       display: block;
       margin-top: 15px;
     }
-    input[type="number"] {
+    input[type="number"],
       width: 100%;
       padding: 8px;
       margin-top: 5px;
       border-radius: 6px;
       border: 1px solid #ccc;
+    }
+    .checkbox-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
     }
     .output {
       margin-top: 20px;
@@ -60,6 +66,12 @@
       color: #555;
       text-align: center;
     }
+    .plan-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -82,9 +94,61 @@
     <label for="endWeek">Which week do you want to finish by? (1–52)</label>
     <input type="number" id="endWeek" min="1" max="52" value="46">
 
+    <!-- === START ADD: Holiday Checkboxes === -->
+<style>
+  .holiday-box {
+    background-color: #e0f8e9;
+    border: 1px solid #b6e2c4;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .holiday-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .holiday-option input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+  }
+
+  .holiday-option label {
+    white-space: nowrap;
+    position: relative;
+    top: -5px; /* 👈 Lift the label slightly */
+  }
+</style>
+
+<div class="holiday-box">
+  <div class="holiday-option">
+    <input type="checkbox" id="skipThanksgiving">
+    <label for="skipThanksgiving">Skip Thanksgiving Week (Week 22)</label>
+  </div> 
+  <div class="holiday-option">
+    <input type="checkbox" id="skipWinter">
+    <label for="skipWinter">Skip Winter Break (Weeks 26–27)</label>
+  </div>
+  <div class="holiday-option">
+    <input type="checkbox" id="skipSpring">
+    <label for="skipSpring">Skip Spring Week (Week 41)</label>
+  </div>
+</div>
+    <!-- === END ADD === -->
+
     <button onclick="calculateCredits()" id="calculateBtn" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
 
     <div class="output" id="result"></div>
+
+    <div class="plan-buttons" id="planButtons" style="display: none;">
+      <button onclick="generatePlan('A')">🟢 Open Plan A</button>
+      <button onclick="generatePlan('B')">🟡 Open Plan B</button>
+      <button onclick="generatePlan('C')">🔵 Open Plan C</button>
+      <button onclick="generatePlan('D')">🔴 Open Plan D</button>
+    </div>
 
     <div class="footer-disclaimer">
       <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
@@ -92,13 +156,38 @@
   </div>
 
   <script>
+    const dateRanges = [ "", "July 1–4", "July 7–11", "July 14–18", "July 21–25", "July 28–Aug 1",
+      "Aug 4–8", "Aug 11–15", "Aug 18–22", "Aug 25–29", "Sept 1–5", "Sept 8–12",
+      "Sept 15–19", "Sept 22–26", "Sept 29–Oct 3", "Oct 6–10", "Oct 13–17", "Oct 20–24",
+      "Oct 27–31", "Nov 3–7", "Nov 10–14", "Nov 17–21", "Nov 24–28", "Dec 1–5",
+      "Dec 8–12", "Dec 15–19", "Dec 22–26", "Dec 29–Jan 2", "Jan 5–9", "Jan 12–16",
+      "Jan 19–23", "Jan 26–30", "Feb 2–6", "Feb 9–13", "Feb 16–20", "Feb 23–27",
+      "Mar 2–6", "Mar 9–13", "Mar 16–20", "Mar 23–27", "Mar 30–Apr 3", "Apr 6–10",
+      "Apr 13–17", "Apr 20–24", "Apr 27–May 1", "May 4–8", "May 11–15", "May 18–22",
+      "May 25–29", "June 1–5", "June 8–12", "June 15–19", "June 22–26", "June 29–30"
+    ];
+
+    let storedPlan = {};
+
     function calculateCredits() {
       const totalCredits = parseInt(document.getElementById("totalCredits").value);
       const startWeek = parseInt(document.getElementById("startWeek").value);
       const endWeek = parseInt(document.getElementById("endWeek").value);
-      const weeksRemaining = endWeek - startWeek + 1;
 
-      if (!totalCredits || !weeksRemaining || weeksRemaining <= 0) {
+      // === START ADD: Checkbox Reduction Logic ===
+      const skipThanksgiving = document.getElementById("skipThanksgiving").checked;
+      const skipWinter = document.getElementById("skipWinter").checked;
+      const skipSpring = document.getElementById("skipSpring").checked;
+
+      let holidayReduction = 0;
+      if (skipThanksgiving) holidayReduction += 1;
+      if (skipWinter) holidayReduction += 2;
+      if (skipSpring) holidayReduction += 1;
+      // === END ADD ===
+
+      let weeksRemaining = endWeek - startWeek + 1 - holidayReduction;
+
+      if (!totalCredits || weeksRemaining <= 0) {
         document.getElementById("result").innerText = "Please enter valid numbers.";
         return;
       }
@@ -140,14 +229,8 @@
 
       const fullWeeksAt3 = Math.floor(totalCredits / 3);
       const remainder = totalCredits % 3;
-      let planB = "";
-      if (remainder === 0) {
-        const totalWeeks = fullWeeksAt3;
-        planB = `3 credits/week for ${fullWeeksAt3} weeks - (${totalWeeks} weeks total)`;
-      } else {
-        const totalWeeks = fullWeeksAt3 + 1;
-        planB = `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${totalWeeks} weeks total)`;
-      }
+      let planB = remainder === 0 ? `3 credits/week for ${fullWeeksAt3} weeks - (${fullWeeksAt3} weeks total)` : `3 credits/week for ${fullWeeksAt3} weeks + 1 week of ${remainder} credit${remainder > 1 ? 's' : ''} - (${fullWeeksAt3 + 1} weeks total)`;
+      const planBWeeks = remainder === 0 ? fullWeeksAt3 : fullWeeksAt3 + 1;
 
       const creditsAfter3PerWeek = 3 * 8;
       const remainingCredits = Math.max(totalCredits - creditsAfter3PerWeek, 0);
@@ -160,6 +243,47 @@
       const totalWeeksD = 8 + fullWeeksAt4 + (remainderD > 0 ? 1 : 0);
       planD += ` - (${totalWeeksD} weeks total)`;
 
+      const planAWeeks = Math.ceil(totalCredits / 2);
+     let planANote = `<li><strong>Plan A:</strong> 2 credits/week for ${planAWeeks} weeks`;
+if (planAWeeks > weeksRemaining) {
+  const weeksOver = planAWeeks - weeksRemaining;
+  const weeksOf3 = weeksOver * 2;
+  const creditsFrom3s = weeksOf3 * 3;
+  const creditsRemaining = totalCredits - creditsFrom3s;
+ const weeksOf2 = Math.floor(creditsRemaining / 2);
+const leftover = creditsRemaining % 2;
+const weeksOf1 = leftover > 0 ? 1 : 0;
+
+const segments = [];
+if (weeksOf3 > 0) segments.push(`${weeksOf3} week${weeksOf3 > 1 ? 's' : ''} of 3 credits`);
+if (weeksOf2 > 0) segments.push(`${weeksOf2} week${weeksOf2 > 1 ? 's' : ''} of 2 credits`);
+if (weeksOf1 > 0) segments.push(`1 week of 1 credit`);
+
+planANote += ` <span style="color: red;">(Exceeds weeks left by ${weeksOver})</span><br>`;
+planANote += `<em>(You need ${segments.join(' and ')} to stay within your available weeks)</em>`;
+}
+planANote += `</li>`;
+
+      let planBNote = `<li><strong>Plan B:</strong> ${planB}`;
+      if (planBWeeks > weeksRemaining) {
+        const diff = planBWeeks - weeksRemaining;
+        planBNote += ` <span style="color: red;">(Exceeds the amount of weeks left by ${diff} week${diff > 1 ? 's' : ''})</span>`;
+      }
+      planBNote += `</li>`;
+
+      let planCNote = `<li><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li>`;
+      if (weeksRemaining < oneCreditWeeks + (weeksRemaining - oneCreditWeeks)) {
+        const diff = (oneCreditWeeks + (weeksRemaining - oneCreditWeeks)) - weeksRemaining;
+        planCNote = `<li><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+ <span style="color: red;">(Exceeds the amount of weeks left by ${diff} week${diff > 1 ? 's' : ''})</span></li>`;
+      }
+
+      let planDNote = `<li>${planD}`;
+      if (totalWeeksD > weeksRemaining) {
+        const diff = totalWeeksD - weeksRemaining;
+        planDNote += ` <span style="color: red;">(Exceeds the amount of weeks left by ${diff} week${diff > 1 ? 's' : ''})</span>`;
+      }
+      planDNote += `</li>`;
+
       const result = `
         <p><strong>Credits Needed:</strong> ${totalCredits}</p>
         <p><strong>Weeks Remaining:</strong> ${weeksRemaining}</p>
@@ -171,24 +295,118 @@
         <hr>
         <p><strong>Workflow Options:</strong></p>
         <ul>
-          <li><strong>Plan A:</strong> 2 credits/week for ${Math.ceil(totalCredits / 2)} weeks</li><br>
-          <li><strong>Plan B:</strong> ${planB}</li><br>
-          <li><strong>Plan C:</strong> You can afford up to ${oneCreditWeeks} week(s) at 1 credit if the rest average 2+</li><br>
-          <li>${planD}</li>
+          ${planANote}<br>
+          ${planBNote}<br>
+          ${planCNote}<br>
+          ${planDNote}
         </ul>
       `;
 
       document.getElementById("result").innerHTML = result;
+      document.getElementById("planButtons").style.display = "flex";
+      storedPlan = { 
+  totalCredits, 
+  startWeek, 
+  endWeek, 
+  oneCreditWeeks,
+  skipWeeks: [
+    ...(skipThanksgiving ? [22] : []),
+    ...(skipWinter ? [26, 27] : []),
+    ...(skipSpring ? [41] : [])
+  ]
+};
     }
 
-    document.getElementById("calculateBtn").addEventListener("click", calculateCredits);
+   function generatePlan(type) {
+  const { totalCredits, startWeek, endWeek, oneCreditWeeks, skipWeeks } = storedPlan;
 
-    document.addEventListener("keydown", function(event) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        calculateCredits();
-      }
-    });
+  // Prepare the usable weeks excluding skipWeeks
+  let allWeeks = [];
+  for (let w = startWeek; w <= endWeek; w++) {
+    allWeeks.push({ week: w, skip: skipWeeks.includes(w) });
+  }
+  const usableWeeks = allWeeks.filter(w => !w.skip);
+  const usableWeekCount = usableWeeks.length;
+
+  // Determine credit distribution per plan
+  let distribution = [];
+  if (type === 'A') {
+  const neededWeeks = Math.ceil(totalCredits / 2);
+  if (neededWeeks <= usableWeekCount) {
+    distribution = [
+      ...Array(neededWeeks).fill(2),
+      ...Array(usableWeekCount - neededWeeks).fill(0)
+    ];
+  } else {
+    const weeksOver = neededWeeks - usableWeekCount;
+    const weeksOf3 = weeksOver * 2; // ✅ Each 3-credit week gives 1 extra credit
+    const creditsFrom3s = weeksOf3 * 3;
+    const remainingCredits = totalCredits - creditsFrom3s;
+    const weeksOf2 = Math.floor(remainingCredits / 2);
+const leftover = remainingCredits % 2;
+const weeksOf1 = leftover > 0 ? 1 : 0;
+const fillerZeros = usableWeekCount - weeksOf3 - weeksOf2 - weeksOf1;
+
+distribution = [
+  ...Array(weeksOf3).fill(3),
+  ...Array(weeksOf2).fill(2),
+  ...Array(weeksOf1).fill(1),
+  ...Array(Math.max(0, fillerZeros)).fill(0)
+];
+  }
+}
+  if (type === 'B') {
+    const full3 = Math.floor(totalCredits / 3);
+    const rem = totalCredits % 3;
+    distribution = [...Array(full3).fill(3)];
+    if (rem > 0) distribution.push(rem);
+  }
+  if (type === 'C') {
+    const twoWeeks = usableWeekCount - oneCreditWeeks;
+    distribution = [...Array(twoWeeks).fill(2), ...Array(oneCreditWeeks).fill(1)];
+  }
+  if (type === 'D') {
+    const part1 = Array(8).fill(3);
+    const rem = totalCredits - 24;
+    const w4 = Math.floor(rem / 4);
+    const r4 = rem % 4;
+    const part2 = Array(w4).fill(4);
+    if (r4 > 0) part2.push(r4);
+    distribution = [...part1, ...part2];
+  }
+
+  // Apply distribution to usable weeks
+  usableWeeks.forEach((w, i) => w.credits = distribution[i] ?? 0);
+  // Add 0 credits for skipped weeks
+  allWeeks = allWeeks.map(w => w.skip ? { ...w, credits: 0 } : usableWeeks.shift());
+
+  // Render table
+  const table = `
+    <html><head><title>Plan ${type} Credit Tracker</title>
+    <style>
+      body { font-family: Arial; padding: 20px; }
+      table { border-collapse: collapse; width: 100%; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+      input[type="checkbox"] { transform: scale(1.2); margin-right: 6px; }
+      .credit-cell { display: flex; align-items: center; gap: 6px; }
+      .skip-row { background-color: #ffd6d6; } /* red highlight */
+    </style></head><body>
+    <h2>Credit Tracker – Plan ${type}</h2>
+    <table>
+      <tr><th>Week</th><th>Date Range</th><th>Credits</th><th colspan="4">Credits</th></tr>
+      ${allWeeks.map(w => {
+        const rowClass = w.skip ? ' class="skip-row"' : '';
+        const row = `<td>${w.week}</td><td>${dateRanges[w.week]}</td><td>${w.credits}</td>`;
+        const cells = Array(4).fill(`<td><div class="credit-cell"><input type="checkbox" /> ________</div></td>`).join('');
+        return `<tr${rowClass}>${row}${cells}</tr>`;
+      }).join('')}
+    </table></body></html>
+  `;
+
+  const printWin = window.open("", "_blank");
+  printWin.document.write(table);
+  printWin.document.close();
+}
   </script>
 </body>
 </html>
