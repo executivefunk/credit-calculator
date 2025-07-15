@@ -72,6 +72,10 @@
       gap: 10px;
       margin-top: 20px;
     }
+    .plan-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
   </style>
 </head>
 <body>
@@ -251,10 +255,11 @@
       planD += ` - (${totalWeeksD} weeks total)`;
 
       const planAWeeks = Math.ceil(totalCredits / 2);
+      let weeksOf3 = 0; // Make this available outside the if-block
      let planANote = `<li><strong>Plan A:</strong> 2 credits/week for ${planAWeeks} weeks`;
 if (planAWeeks > weeksRemaining) {
   const weeksOver = planAWeeks - weeksRemaining;
-  const weeksOf3 = weeksOver * 2;
+  weeksOf3 = weeksOver * 2;
   const creditsFrom3s = weeksOf3 * 3;
   const creditsRemaining = totalCredits - creditsFrom3s;
  const weeksOf2 = Math.floor(creditsRemaining / 2);
@@ -310,6 +315,16 @@ planANote += `</li>`;
       `;
 
       document.getElementById("result").innerHTML = result;
+      // Disable Plan A button if weeksOf3 exceeds weeksRemaining
+const planAButton = document.querySelector('button[onclick="generatePlan(\'A\')"]');
+if (typeof weeksOf3 !== 'undefined' && weeksOf3 > weeksRemaining) {
+  planAButton.disabled = true;
+  planAButton.title = "Disabled: Not enough time — too many 3-credit weeks required.";
+} else {
+  planAButton.disabled = false;
+  planAButton.title = "";
+}
+
       // Disable Plan C button if Plan A exceeds weeks
 const planCButton = document.querySelector('button[onclick="generatePlan(\'C\')"]');
 if (planAWeeks > weeksRemaining) {
@@ -318,6 +333,16 @@ if (planAWeeks > weeksRemaining) {
 } else {
   planCButton.disabled = false;
   planCButton.title = "";
+}
+      
+      // Disable Plan B button if Plan B exceeds weeks
+const planBButton = document.querySelector('button[onclick="generatePlan(\'B\')"]');
+if (planBWeeks > weeksRemaining) {
+  planBButton.disabled = true;
+  planBButton.title = "Disabled: 3 credits/week plan won't fit in your remaining time.";
+} else {
+  planBButton.disabled = false;
+  planBButton.title = "";
 }
 
       document.getElementById("planButtons").style.display = "flex";
