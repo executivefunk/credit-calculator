@@ -145,6 +145,7 @@ select {
 }
 
     /* Responsive Tweaks */
+/* Responsive Tweaks */
 @media (max-width: 768px) {
   html, body {
     font-size: 18px;
@@ -170,12 +171,10 @@ select {
   }
 
   button,
-#langToggleBtn {
-  font-size: 0.96em !important;   /* 20% smaller */
-  padding: 12.8px !important;     /* 20% smaller */
-  border-radius: 6px;
-  }
-
+  #langToggleBtn {
+    font-size: 0.96em !important;
+    padding: 12.8px !important;
+    border-radius: 6px;
   }
 
   .plan-buttons button {
@@ -202,8 +201,33 @@ select {
   }
 
   body.spanish-mode .holiday-option label {
-  font-size: 0.75em;
-  line-height: 1.1em;
+    font-size: 0.75em;
+    line-height: 1.1em;
+  }
+}
+
+/* ✅ This MUST be outside the above block */
+@media print {
+  body {
+    background: white !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 20px !important;
+  }
+
+  .print-page-1 {
+    page-break-after: always;
+  }
+
+  #langToggleBtn,
+  #languagePrompt {
+    display: none !important;
   }
 }
 </style>
@@ -253,48 +277,50 @@ select {
   <!-- Actual calculator container (hidden at first) -->
   <div class="container">
   <div style="text-align: center; margin-bottom: 10px;">
-  <button id="langToggleBtn" onclick="showLanguagePrompt()">Change Language / Cambiar Idioma</button>
-</div>
-  <h2>Weekly Credit Calculator</h2>
+    <button id="langToggleBtn" onclick="showLanguagePrompt()">Change Language / Cambiar Idioma</button>
+  </div>
 
+  <div class="print-page-1">
+    <h2>Weekly Credit Calculator</h2>
     <p id="currentDate" style="text-align: center; font-weight: bold; margin-top: -10px;"></p>
-<p id="currentWeek" style="text-align: center; font-size: 1.1em; margin-bottom: 15px;"></p>
+    <p id="currentWeek" style="text-align: center; font-size: 1.1em; margin-bottom: 15px;"></p>
 
     <div id="mainDisclaimer" class="disclaimer" style="margin-bottom: 15px;">
-    This calculator is designed for students who plan to graduate this school year.
-    <br><br>
-    If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
-    <br><br>
-    Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
-  </div>
+      This calculator is designed for students who plan to graduate this school year.
+      <br><br>
+      If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
+      <br><br>
+      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
+    </div>
 
     <label for="totalCredits">How many credits do you need to finish?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
 
     <label for="startWeek">What week are you starting from?</label>
-<select id="startWeek"></select>
+    <select id="startWeek"></select>
 
-<label for="endWeek">Which week do you want to finish by?</label>
-<select id="endWeek"></select>
+    <label for="endWeek">Which week do you want to finish by?</label>
+    <select id="endWeek"></select>
 
-<div class="holiday-box">
-  <div class="holiday-option">
-    <input type="checkbox" id="skipThanksgiving">
-    <label for="skipThanksgiving">Skip Thanksgiving Week (Week 22)</label>
-  </div> 
-  <div class="holiday-option">
-    <input type="checkbox" id="skipWinter">
-    <label for="skipWinter">Skip Winter Break (Weeks 26–27)</label>
-  </div>
-  <div class="holiday-option">
-    <input type="checkbox" id="skipSpring">
-    <label for="skipSpring">Skip Spring Week (Week 41)</label>
-  </div>
-</div>
-    <!-- === END ADD === -->
+    <div class="holiday-box">
+      <div class="holiday-option">
+        <input type="checkbox" id="skipThanksgiving">
+        <label for="skipThanksgiving">Skip Thanksgiving Week (Week 22)</label>
+      </div> 
+      <div class="holiday-option">
+        <input type="checkbox" id="skipWinter">
+        <label for="skipWinter">Skip Winter Break (Weeks 26–27)</label>
+      </div>
+      <div class="holiday-option">
+        <input type="checkbox" id="skipSpring">
+        <label for="skipSpring">Skip Spring Week (Week 41)</label>
+      </div>
+    </div>
 
     <button onclick="calculateCredits()" id="calculateBtn" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
+  </div>
 
+  <div class="print-page-2">
     <div class="output" id="result"></div>
 
     <div class="plan-buttons" id="planButtons" style="display: none;">
@@ -307,6 +333,7 @@ select {
     <div class="footer-disclaimer" id="footerDisclaimer">
       <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
     </div>
+  </div>
   </div>
 
   <script>
