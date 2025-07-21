@@ -19,7 +19,7 @@ html, body {
 /* Default container (desktop and up) */
 .container {
   max-width: 500px;
-  margin: 0 auto;
+  margin: 40px auto;
   background: white;
   padding: 20px;
   border-radius: 12px;
@@ -140,19 +140,33 @@ select {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
-#languagePrompt {
-  transition: opacity 0.4s ease;
-}
 
-    /* Responsive Tweaks */
 /* Responsive Tweaks */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   html, body {
-    font-size: 18px;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #f4f4f4;
   }
 
-  h2 {
-    font-size: 1.6em !important;
+  .container {
+  max-width: none;
+  width: calc(100% - 20px);
+  min-height: calc(100vh - 14px);  /* 4 top + 10 bottom */
+  margin: 4px 10px 10px 10px;
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+  .holiday-option {
+    font-size: 14px;
+    flex-wrap: wrap;
   }
 
   label,
@@ -161,166 +175,107 @@ select {
   .warning,
   .footer-disclaimer,
   .output {
-    font-size: 1.2em !important;
+    font-size: 14px;
   }
-
-  input[type="number"],
-  select {
-    padding: 14px !important;
-    font-size: 1.2em !important;
-  }
-
-  button,
-  #langToggleBtn {
-    font-size: 0.96em !important;
-    padding: 12.8px !important;
-    border-radius: 6px;
-  }
-
-  .plan-buttons button {
-    font-size: 1.2em !important;
-    padding: 16px !important;
-  }
-
-  .holiday-option input[type="checkbox"] {
-    transform: scale(1.5) !important;
-    margin-right: 10px;
-  }
-
-  #languagePrompt .prompt-container {
-    font-size: 1.2em;
-  }
-
-  #languagePrompt .prompt-container > div > div {
-    font-size: 1.3em !important;
-    padding: 18px !important;
-  }
-
-  #languagePrompt .prompt-container span {
-    font-size: 1.1em !important;
-  }
-
-  body.spanish-mode .holiday-option label {
-    font-size: 0.75em;
-    line-height: 1.1em;
-  }
+  /* Language Prompt Buttons */
+.lang-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+  padding: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: background 0.3s ease;
 }
 
-/* ✅ This MUST be outside the above block */
-@media print {
-  body {
-    background: white !important;
-    margin: 0;
-    padding: 0;
-  }
+.blue-btn {
+  background-color: #007bff;
+}
 
-  .container {
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 20px !important;
-  }
+.green-btn {
+  background-color: #28a745;
+}
 
-  .print-page-1 {
-    page-break-after: always;
-  }
-
-  #langToggleBtn,
-  #languagePrompt {
-    display: none !important;
-  }
+.lang-btn:hover {
+  opacity: 0.9;
+}
 }
 </style>
 </head>
 <body>
 
- <div id="languagePrompt" style="display: none; justify-content: center; align-items: center; min-height: 100vh;">
-  <div class="prompt-container">
-    <div>
-      <p style="text-align: center; font-weight: bold; font-size: 1.8em; margin-bottom: 20px;">
-        Weekly Credit Calculator
-      </p>
+  <!-- Language Selection Prompt OUTSIDE container -->
+<div id="languagePrompt" style="display: none;">
+  <div class="container">
+    <h2 style="text-align: center; margin-bottom: 20px;">
+      Welcome to the Credit Calculator!<br>
+      Please choose your language.
+    </h2>
 
-      <div onclick="setLanguage(false)" style="
-  background-color: #fff89a;
-  color: #333;
-  text-align: center;
-  padding: 12.8px !important;
-  font-size: 1.28em !important;
-  cursor: pointer;
-  border-radius: 6.4px !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-top: 10px;
-">
-  <strong>English - Inglés</strong><br>
-  <span style="font-size: 0.64em !important;">Click Here</span>
-</div>
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <button onclick="setLanguage(false)" class="lang-btn blue-btn">
+        <div>Click Here</div>
+        <strong>English</strong>
+      </button>
 
-<div onclick="setLanguage(true)" style="
-  background-color: #fff89a;
-  color: #333;
-  text-align: center;
-  padding: 12.8px !important;
-  font-size: 1.28em !important;
-  cursor: pointer;
-  border-radius: 6.4px !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-top: 10px;
-">
-  <strong>Español - Spanish</strong><br>
-  <span style="font-size: 0.64em !important;">Click Here</span>
-</div>
+      <button onclick="setLanguage(true)" class="lang-btn green-btn">
+        <div>Clic Aquí</div>
+        <strong>Español</strong>
+      </button>
     </div>
   </div>
 </div>
 
   <!-- Actual calculator container (hidden at first) -->
-  <div class="container">
-  <div style="text-align: center; margin-bottom: 10px;">
+  <div class="container" id="calculator">
+  <div style="text-align: right; margin-bottom: 10px;">
     <button id="langToggleBtn" onclick="showLanguagePrompt()">Change Language / Cambiar Idioma</button>
   </div>
+  <h2>Weekly Credit Calculator</h2>
 
-  <div class="print-page-1">
-    <h2>Weekly Credit Calculator</h2>
     <p id="currentDate" style="text-align: center; font-weight: bold; margin-top: -10px;"></p>
-    <p id="currentWeek" style="text-align: center; font-size: 1.1em; margin-bottom: 15px;"></p>
+<p id="currentWeek" style="text-align: center; font-size: 1.1em; margin-bottom: 15px;"></p>
 
     <div id="mainDisclaimer" class="disclaimer" style="margin-bottom: 15px;">
-      This calculator is designed for students who plan to graduate this school year.
-      <br><br>
-      If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
-      <br><br>
-      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
-    </div>
+    This calculator is designed for students who plan to graduate this school year.
+    <br><br>
+    If you’re planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
+    <br><br>
+    Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
+  </div>
 
     <label for="totalCredits">How many credits do you need to finish?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
 
     <label for="startWeek">What week are you starting from?</label>
-    <select id="startWeek"></select>
+<select id="startWeek"></select>
 
-    <label for="endWeek">Which week do you want to finish by?</label>
-    <select id="endWeek"></select>
+<label for="endWeek">Which week do you want to finish by?</label>
+<select id="endWeek"></select>
 
-    <div class="holiday-box">
-      <div class="holiday-option">
-        <input type="checkbox" id="skipThanksgiving">
-        <label for="skipThanksgiving">Skip Thanksgiving Week (Week 22)</label>
-      </div> 
-      <div class="holiday-option">
-        <input type="checkbox" id="skipWinter">
-        <label for="skipWinter">Skip Winter Break (Weeks 26–27)</label>
-      </div>
-      <div class="holiday-option">
-        <input type="checkbox" id="skipSpring">
-        <label for="skipSpring">Skip Spring Week (Week 41)</label>
-      </div>
-    </div>
+<div class="holiday-box">
+  <div class="holiday-option">
+    <input type="checkbox" id="skipThanksgiving">
+    <label for="skipThanksgiving">Skip Thanksgiving Week (Week 22)</label>
+  </div> 
+  <div class="holiday-option">
+    <input type="checkbox" id="skipWinter">
+    <label for="skipWinter">Skip Winter Break (Weeks 26–27)</label>
+  </div>
+  <div class="holiday-option">
+    <input type="checkbox" id="skipSpring">
+    <label for="skipSpring">Skip Spring Week (Week 41)</label>
+  </div>
+</div>
+    <!-- === END ADD === -->
 
     <button onclick="calculateCredits()" id="calculateBtn" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
-  </div>
 
-  <div class="print-page-2">
     <div class="output" id="result"></div>
 
     <div class="plan-buttons" id="planButtons" style="display: none;">
@@ -334,14 +289,9 @@ select {
       <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
     </div>
   </div>
-  </div>
 
   <script>
 
-    try {
-} catch (e) {
-  alert("Script error: " + e.message);
-}
     let isSpanish = false;
     function getText(key) {
   const map = {
@@ -429,9 +379,9 @@ const translations = {
   "How many credits do you need to finish?": "¿Cuántos créditos necesitas completar?",
   "What week are you starting from?": "¿Desde qué semana comienzas?",
   "Which week do you want to finish by?": "¿En qué semana quieres terminar?",
-  "Skip Thanksgiving Week (Week 22)": "Saltar semana - Acción de Gracias (Semana 22)",
-  "Skip Winter Break (Weeks 26–27)": "Saltar vacaciones - Invierno (Semanas 26–27)",
-  "Skip Spring Week (Week 41)": "Saltar semana - Primavera (Semana 41)",
+  "Skip Thanksgiving Week (Week 22)": "Saltar la semana de Acción de Gracias (Semana 22)",
+  "Skip Winter Break (Weeks 26–27)": "Saltar las vacaciones de invierno (Semanas 26–27)",
+  "Skip Spring Week (Week 41)": "Saltar la semana de primavera (Semana 41)",
   "Calculate": "Calcular",
   "Disclaimer:": "Aviso:",
   "This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.": "Esta calculadora es una herramienta útil para planificar, pero es importante verificar tus créditos y el número de semanas. Si no estás seguro, habla con tu maestro o consejero escolar.",
@@ -528,7 +478,7 @@ const weeks = [
 ];
 
    function showLanguagePrompt() {
-  const calc = document.querySelector(".container");
+  const calc = document.getElementById("calculator");
   calc.style.opacity = 0;
 
   setTimeout(() => {
@@ -963,8 +913,7 @@ distribution = [
   let currentWeek = "Outside of school year";
 
   for (let i = dateRanges.length - 1; i > 0; i--) {
-    const [year, month, day] = dateRanges[i].split("-").map(Number);
-    const weekStart = new Date(year, month - 1, day); // Month is 0-indexed
+    const weekStart = new Date(dateRanges[i]);
     if (today >= weekStart) {
       currentWeek = i;
       break;
@@ -991,12 +940,6 @@ distribution = [
 
     function setLanguage(spanish) {
   isSpanish = spanish;
-      
-      if (spanish) {
-  document.body.classList.add("spanish-mode");
-} else {
-  document.body.classList.remove("spanish-mode");
-}
 
   // Fade out language prompt
   const prompt = document.getElementById("languagePrompt");
@@ -1008,7 +951,7 @@ distribution = [
 
     document.body.classList.remove("show-prompt");
 
-    const calc = document.querySelector(".container");
+    const calc = document.getElementById("calculator");
     calc.style.opacity = 0;
     calc.style.display = "block";
 
@@ -1098,7 +1041,10 @@ distribution = [
   if (currentDateEl) {
     const today = new Date();
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    currentDateEl.textContent = today.toLocaleDateString(undefined, options);
+    currentDateEl.textContent = today.toLocaleDateString(
+      isSpanish ? "es-ES" : "en-US",
+      options
+    );
   }
 
   const currentWeekEl = document.getElementById("currentWeek");
@@ -1107,7 +1053,9 @@ distribution = [
     const today = new Date();
     const diffTime = today - startDate;
     const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1;
-    currentWeekEl.textContent = `Week ${diffWeeks}`;
+    currentWeekEl.textContent = isSpanish
+      ? `📅 Semana actual: ${diffWeeks}`
+      : `📅 Current Week: ${diffWeeks}`;
   }
 
   // ✅ Refresh dropdowns with a small delay
