@@ -7,23 +7,26 @@
   <link rel="manifest" href="manifest.json">
   <style>
   body {
-    font-family: Arial, sans-serif;
-    padding: 20px 12px;
-    background: #f4f4f4;
-    margin: 0;
-    min-height: 100vh;
-    box-sizing: border-box;
-  }
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+  height: 100%;
+}
 
-  .container {
-    max-width: 500px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-  }
+.container {
+  max-width: none;
+  width: calc(100% - 20px); /* subtract 10px from both left and right */
+  min-height: calc(100vh - 20px); /* subtract 10px from both top and bottom */
+  margin-inline: 10px; /* left and right */
+margin-block: 10px;  /* top and bottom */
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
 
   h2 {
     text-align: center;
