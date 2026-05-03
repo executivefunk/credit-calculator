@@ -2260,8 +2260,8 @@ function generatePlan(type) {
     }).join('');
     // Display: for cross-year, show actual week number (not the extended number)
     const displayWeek = w.actualWeek;
-    var baseSkip = w.softSkip || (w.skip && !w.inOP1 && !w.inOP2);
-    rows.push('<tr' + rowClass + ' data-week="' + w.week + '" data-skip="' + (w.skip ? '1' : '0') + '" data-soft-skip="' + (w.softSkip ? '1' : '0') + '" data-base-skip="' + (baseSkip ? '1' : '0') + '" data-de1="' + (w.inDE1 ? '1' : '0') + '" data-de2="' + (w.inDE2 ? '1' : '0') + '" data-op1="' + (w.inOP1 ? '1' : '0') + '" data-op2="' + (w.inOP2 ? '1' : '0') + '">' +
+    var isRegularSkip = w.softSkip || skipWeeks.includes(w.week);
+    rows.push('<tr' + rowClass + ' data-week="' + w.week + '" data-skip="' + (w.skip ? '1' : '0') + '" data-soft-skip="' + (w.softSkip ? '1' : '0') + '" data-base-skip="' + (isRegularSkip ? '1' : '0') + '" data-de1="' + (w.inDE1 ? '1' : '0') + '" data-de2="' + (w.inDE2 ? '1' : '0') + '" data-op1="' + (w.inOP1 ? '1' : '0') + '" data-op2="' + (w.inOP2 ? '1' : '0') + '">' +
       '<td class="col-week">' + displayWeek + '</td>' +
       '<td class="' + dateCellClass + '">' + formatDateForCell(planDateRanges[w.week] || '') + '</td>' +
       '<td class="col-credits"><strong class="val">' + w.credits + '</strong></td>' +
@@ -2301,9 +2301,9 @@ function generatePlan(type) {
   '.de-note { padding: 4px 8px; border-radius: 6px; margin-top: 4px; font-size: 0.85rem; }' +
   '.de-note-1 { background: #ffe0b2; border: 1px solid #ffcc80; }' +
   '.de-note-2 { background: #c8e6c9; border: 1px solid #a5d6a7; }' +
-  'td.op1-cell { background: #ffcdd2; }' +
-  'td.op2-cell { background: #f8bbd0; }' +
-  'td.op-both { background: linear-gradient(to right, #ffcdd2 50%, #f8bbd0 50%); }' +
+  'td.op1-cell { background: #ef9a9a !important; }' +
+  'td.op2-cell { background: #f48fb1 !important; }' +
+  'td.op-both { background: linear-gradient(to right, #ef9a9a 50%, #f48fb1 50%) !important; }' +
   '.op-note { padding: 4px 8px; border-radius: 6px; margin-top: 4px; font-size: 0.85rem; background: #ffcdd2; border: 1px solid #ef9a9a; }' +
   '.de-toggle-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; margin-top: 4px; }' +
   '.de-toggle-wrap input { margin: 0; }' +
@@ -2521,7 +2521,7 @@ function generatePlan(type) {
     'var odt2 = document.getElementById("opToggle2");' +
     'if (odt1) odt1.addEventListener("change", updateDeToggles);' +
     'if (odt2) odt2.addEventListener("change", updateDeToggles);' +
-    'refreshSummary();' +
+    'updateDeToggles();' +
     // Prevent text input clicks from toggling the parent label's checkbox
     'document.querySelectorAll(".credit-line").forEach(function(inp) { inp.addEventListener("click", function(e) { e.stopPropagation(); }); });' +
     // Column swap logic
