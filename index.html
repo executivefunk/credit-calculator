@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Weekly Credit Calculator</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
   <style>
 /* Base Layout */
 html, body {
@@ -116,6 +117,8 @@ select {
   transition: background-color 0.3s, color 0.3s;
 }
 .top-actions button:hover { background-color: #555; color: white; }
+.top-actions button.btn-pdf { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.top-actions button.btn-pdf:hover { background: #1b5e20; }
 /* GRADUATION PLANNER */
 .grad-planner{background:#f0f4ff;border:2px solid #b0c4de;border-radius:10px;margin-bottom:18px;overflow:hidden;}
 .gp-header{display:flex;justify-content:center;align-items:center;padding:12px 16px;cursor:pointer;background:#e8f0fe;user-select:none;position:relative;}
@@ -146,7 +149,7 @@ select {
 .gp-pace-yellow{color:#b8860b;}
 .gp-pace-orange{color:#e65100;}
 .gp-pace-red{color:#c62828;font-weight:bold;}
-.gp-use-btn{margin-top:9px;width:100%;padding:9px 12px;background:#4a90d9;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.88em;font-weight:bold;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;line-height:1.3;}
+.gp-use-btn{margin-top:9px;width:100%;padding:9px 12px;background:#4a90d9;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.82em;font-weight:bold;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;line-height:1.3;}
 .gp-use-btn:hover{background:#3a7bc8;}
 .gp-intervention{background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:12px 14px;margin-top:8px;}
 .gp-intervention h4{margin:0 0 8px;font-size:0.95em;color:#7b5800;}
@@ -159,12 +162,17 @@ select {
 .gp-section-label span{color:#ffcdd2;}
 .gp-scenario-divider{border:none;border-top:2px dashed #b0c4de;margin:16px 0;}
 .gp-plan-section{border-radius:10px;padding:12px 12px 6px;margin-bottom:14px;overflow:hidden;}
-.gp-plan-traditional{border:2px solid #1a3a6b;background:#f8faff;}
-.gp-plan-extended{border:2px solid #4a6fa5;background:#f0f4fb;}
-.gp-plan-traditional .gp-section-label{background:#1a3a6b;}
-.gp-plan-extended .gp-section-label{background:#3a5a8a;}
+.gp-plan-traditional{border:2px solid #2e7d32;background:#f1f8e9;}
+.gp-plan-extended{border:2px solid #f9a825;background:#fffde7;}
+.gp-plan-traditional .gp-section-label{background:#2e7d32;}
+.gp-plan-extended .gp-section-label{background:#f57f17;}
 .gp-bm-hit{color:#2e7d32;font-size:0.85em;}
 .gp-bm-miss{color:#c62828;font-size:0.85em;}
+.gp-or-divider{text-align:center;margin:18px 0;position:relative;}
+.gp-or-divider::before,.gp-or-divider::after{content:'';position:absolute;top:50%;width:calc(50% - 30px);height:1px;background:#ccc;}
+.gp-or-divider::before{left:0;}
+.gp-or-divider::after{right:0;}
+.gp-or-divider span{background:var(--gp-bg,#f0f4fb);padding:0 10px;font-size:0.85em;font-weight:600;color:#888;position:relative;}
 @media(max-width:768px){.gp-inputs{flex-direction:column;}.gp-inputs>div{min-width:unset;}.gp-header-bar{flex-direction:column;gap:4px;}}
 
 @media print {
@@ -196,7 +204,7 @@ select {
 </div>
 
 <div class="top-actions">
-  <button onclick="emailPage()" id="emailButton" title="Email this page">Email</button>
+  <button class="btn-pdf" onclick="saveMainPDF()" id="pdfButton" title="Save as PDF">PDF</button>
   <button onclick="window.print()" id="printButton" title="Print this page">Print</button>
 </div>
 
@@ -267,7 +275,7 @@ select {
         <p id="crossYearNote" style="font-size:0.82em;color:#555;margin-top:6px;"></p>
         <div id="currentYearSkipSlot" style="margin-top:12px;"></div>
         <div id="nextYearSkipBox" class="holiday-box" style="margin-top:12px;background:#dbe6f6;border-color:#b0c4de;">
-          <p id="nextYearSkipTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip — Next Year (Optional):</p>
+          <p id="nextYearSkipTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip — <span style="color:#b71c1c;">Next Year</span> (Optional):</p>
           <div class="holiday-option" id="nextYearWeek1PartialOption" style="display:none;">
             <input type="checkbox" id="nextYearSkipWeek1Partial" checked>
             <label for="nextYearSkipWeek1Partial" id="labelNextYearWeek1Partial"></label>
@@ -285,16 +293,15 @@ select {
             <label for="nextYearSkipSpring" id="labelNextYearSpring">Skip Spring Week (Week 41)</label>
           </div>
           <hr style="margin: 10px 0;">
-          <div class="holiday-option"><input type="checkbox" id="nextYearCustomSkip1"><select id="nextYearCustomWeek1"></select></div>
-          <div class="holiday-option"><input type="checkbox" id="nextYearCustomSkip2"><select id="nextYearCustomWeek2"></select></div>
-          <div class="holiday-option"><input type="checkbox" id="nextYearCustomSkip3"><select id="nextYearCustomWeek3"></select></div>
-          <div class="holiday-option"><input type="checkbox" id="nextYearCustomSkip4"><select id="nextYearCustomWeek4"></select></div>
+          <div id="nextYearCustomSkipContainer"></div>
+          <button type="button" id="addNextYearCustomSkipBtn" onclick="addNextYearCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
+          <p id="nextYearCustomSkipCount" style="font-size:0.75em;color:#999;text-align:center;margin:4px 0 0;display:none;"></p>
         </div>
       </div>
     </div>
     <div id="currentYearSkipOriginalSlot"></div>
     <div class="holiday-box" id="currentYearSkipBox">
-      <p id="skipBoxTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip - Current Year (Optional):</p>
+      <p id="skipBoxTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip - <span style="color:#b71c1c;">Current Year</span> (Optional):</p>
       <div class="holiday-option" id="week1PartialOption" style="display:none;">
         <input type="checkbox" id="skipWeek1Partial" checked>
         <label for="skipWeek1Partial" id="labelWeek1Partial"></label>
@@ -312,10 +319,9 @@ select {
         <label for="skipSpring" id="labelSpring">Skip Spring Week (Week 41)</label>
       </div>
       <hr style="margin: 10px 0;">
-      <div class="holiday-option"><input type="checkbox" id="customSkip1"><select id="customWeek1"></select></div>
-      <div class="holiday-option"><input type="checkbox" id="customSkip2"><select id="customWeek2"></select></div>
-      <div class="holiday-option"><input type="checkbox" id="customSkip3"><select id="customWeek3"></select></div>
-      <div class="holiday-option"><input type="checkbox" id="customSkip4"><select id="customWeek4"></select></div>
+      <div id="customSkipContainer"></div>
+      <button type="button" id="addCustomSkipBtn" onclick="addCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
+      <p id="customSkipCount" style="font-size:0.75em;color:#999;text-align:center;margin:4px 0 0;display:none;"></p>
     </div>
     <div class="de-box">
       <div class="de-toggle">
@@ -489,7 +495,7 @@ select {
         </div>
       </div>
     </div>
-    <button onclick="calculateCredits()" id="calculateBtn" style="margin-top: 20px; width: 100%; padding: 10px;">Calculate</button>
+    <!-- Auto-calculate: no button needed -->
   </div>
   <div class="print-page-2">
     <div class="output" id="result"></div>
@@ -687,12 +693,7 @@ function switchYear(mode) {
   document.getElementById("skipThanksgiving").checked = false;
   document.getElementById("skipWinter").checked = false;
   document.getElementById("skipSpring").checked = false;
-  for (let i = 1; i <= 4; i++) {
-    const cb = document.getElementById('customSkip' + i);
-    const sel = document.getElementById('customWeek' + i);
-    if (cb) cb.checked = false;
-    if (sel) sel.selectedIndex = 0;
-  }
+  clearCustomSkipWeeks();
   resetDualEnrollment();
   resetOutsideProgram();
   populateDeDropdowns();
@@ -932,12 +933,7 @@ function showLanguagePrompt() {
     document.getElementById("skipThanksgiving").checked = false;
     document.getElementById("skipWinter").checked = false;
     document.getElementById("skipSpring").checked = false;
-    for (let i = 1; i <= 4; i++) {
-      const cb = document.getElementById('customSkip' + i);
-      const sel = document.getElementById('customWeek' + i);
-      if (cb) cb.checked = false;
-      if (sel) sel.selectedIndex = 0;
-    }
+    clearCustomSkipWeeks();
     resetDualEnrollment();
     resetOutsideProgram();
     resetCrossYear();
@@ -978,20 +974,209 @@ function populateWeekDropdowns() {
     startSelect.appendChild(opt1);
     endSelect.appendChild(opt2);
   }
-  // Custom skip dropdowns
-  for (let c = 1; c <= 4; c++) {
-    const sel = document.getElementById('customWeek' + c);
-    if (!sel) continue;
-    sel.innerHTML = "";
-    for (let i = 0; i < weeks.length; i++) {
-      const opt = document.createElement("option");
-      opt.value = i + 1;
-      opt.textContent = isSpanish
-        ? yl + ' – Semana ' + (i + 1) + ': ' + weeks[i][1]
-        : yl + ' – Week ' + (i + 1) + ': ' + weeks[i][0];
-      sel.appendChild(opt);
+  // Repopulate any existing dynamic custom skip dropdowns
+  populateCustomSkipSelects();
+}
+
+// =====================================================
+// DYNAMIC CUSTOM SKIP WEEKS (current year)
+// =====================================================
+var customSkipCounter = 0;
+var MAX_CUSTOM_SKIPS = 10;
+
+function addCustomSkipWeek() {
+  const container = document.getElementById('customSkipContainer');
+  if (!container) return;
+  const existing = container.querySelectorAll('.custom-skip-row').length;
+  if (existing >= MAX_CUSTOM_SKIPS) return;
+
+  customSkipCounter++;
+  const id = customSkipCounter;
+  const row = document.createElement('div');
+  row.className = 'holiday-option custom-skip-row';
+  row.id = 'customSkipRow' + id;
+  row.style.display = 'flex';
+  row.style.alignItems = 'center';
+  row.style.gap = '6px';
+  row.innerHTML =
+    '<input type="checkbox" id="dynSkip' + id + '" checked>' +
+    '<select id="dynWeek' + id + '" style="flex:1;font-size:0.85em;padding:4px;"></select>' +
+    '<button type="button" onclick="removeCustomSkipWeek(' + id + ')" style="background:none;border:none;color:#c00;font-size:1.1em;cursor:pointer;padding:2px 6px;" title="Remove">&times;</button>';
+  container.appendChild(row);
+
+  // Populate the select
+  const sel = row.querySelector('select');
+  populateSingleSkipSelect(sel, weeks, schoolYearData.yearLabel);
+
+  // Wire events
+  sel.addEventListener('change', calculateCredits);
+  row.querySelector('input[type=checkbox]').addEventListener('change', calculateCredits);
+
+  updateCustomSkipUI();
+  calculateCredits();
+}
+
+function removeCustomSkipWeek(id) {
+  const row = document.getElementById('customSkipRow' + id);
+  if (row) row.remove();
+  updateCustomSkipUI();
+  calculateCredits();
+}
+
+function updateCustomSkipUI() {
+  const container = document.getElementById('customSkipContainer');
+  const btn = document.getElementById('addCustomSkipBtn');
+  const countEl = document.getElementById('customSkipCount');
+  if (!container) return;
+  const count = container.querySelectorAll('.custom-skip-row').length;
+  if (btn) btn.style.display = count >= MAX_CUSTOM_SKIPS ? 'none' : '';
+  if (countEl) {
+    if (count > 0) {
+      countEl.style.display = '';
+      countEl.textContent = count + ' / ' + MAX_CUSTOM_SKIPS + (isSpanish ? ' semanas personalizadas' : ' custom weeks');
+    } else {
+      countEl.style.display = 'none';
     }
   }
+}
+
+function clearCustomSkipWeeks() {
+  const container = document.getElementById('customSkipContainer');
+  if (container) container.innerHTML = '';
+  customSkipCounter = 0;
+  updateCustomSkipUI();
+}
+
+function getCustomSkipWeeks() {
+  const container = document.getElementById('customSkipContainer');
+  if (!container) return [];
+  const rows = container.querySelectorAll('.custom-skip-row');
+  const skips = [];
+  const seen = new Set();
+  let dup = false;
+  rows.forEach(function(row) {
+    const cb = row.querySelector('input[type=checkbox]');
+    const sel = row.querySelector('select');
+    if (cb && cb.checked && sel && sel.value) {
+      const val = parseInt(sel.value);
+      if (!isNaN(val)) {
+        if (seen.has(val)) dup = true;
+        else { seen.add(val); skips.push(val); }
+      }
+    }
+  });
+  return { skips: skips, duplicate: dup };
+}
+
+function populateSingleSkipSelect(sel, weekArr, yearLabel) {
+  sel.innerHTML = '';
+  for (let i = 0; i < weekArr.length; i++) {
+    const opt = document.createElement('option');
+    opt.value = i + 1;
+    opt.textContent = isSpanish
+      ? yearLabel + ' – Semana ' + (i + 1) + ': ' + weekArr[i][1]
+      : yearLabel + ' – Week ' + (i + 1) + ': ' + weekArr[i][0];
+    sel.appendChild(opt);
+  }
+}
+
+function populateCustomSkipSelects() {
+  const container = document.getElementById('customSkipContainer');
+  if (!container) return;
+  container.querySelectorAll('.custom-skip-row select').forEach(function(sel) {
+    const curVal = sel.value;
+    populateSingleSkipSelect(sel, weeks, schoolYearData.yearLabel);
+    if (curVal) sel.value = curVal;
+  });
+}
+
+// =====================================================
+// DYNAMIC CUSTOM SKIP WEEKS (next year)
+// =====================================================
+var nextYearCustomSkipCounter = 0;
+
+function addNextYearCustomSkipWeek() {
+  const container = document.getElementById('nextYearCustomSkipContainer');
+  if (!container) return;
+  const existing = container.querySelectorAll('.custom-skip-row').length;
+  if (existing >= MAX_CUSTOM_SKIPS) return;
+
+  nextYearCustomSkipCounter++;
+  const id = nextYearCustomSkipCounter;
+  const row = document.createElement('div');
+  row.className = 'holiday-option custom-skip-row';
+  row.id = 'nextYearCustomSkipRow' + id;
+  row.style.display = 'flex';
+  row.style.alignItems = 'center';
+  row.style.gap = '6px';
+  row.innerHTML =
+    '<input type="checkbox" id="dynNextSkip' + id + '" checked>' +
+    '<select id="dynNextWeek' + id + '" style="flex:1;font-size:0.85em;padding:4px;"></select>' +
+    '<button type="button" onclick="removeNextYearCustomSkipWeek(' + id + ')" style="background:none;border:none;color:#c00;font-size:1.1em;cursor:pointer;padding:2px 6px;" title="Remove">&times;</button>';
+  container.appendChild(row);
+
+  // Populate with next year weeks
+  const nextYear = (activeStartYear || getCurrentSchoolYear()) + 1;
+  const nextData = generateSchoolYear(nextYear);
+  const sel = row.querySelector('select');
+  populateSingleSkipSelect(sel, nextData.weeks, nextData.yearLabel);
+
+  sel.addEventListener('change', calculateCredits);
+  row.querySelector('input[type=checkbox]').addEventListener('change', calculateCredits);
+
+  updateNextYearCustomSkipUI();
+  calculateCredits();
+}
+
+function removeNextYearCustomSkipWeek(id) {
+  const row = document.getElementById('nextYearCustomSkipRow' + id);
+  if (row) row.remove();
+  updateNextYearCustomSkipUI();
+  calculateCredits();
+}
+
+function updateNextYearCustomSkipUI() {
+  const container = document.getElementById('nextYearCustomSkipContainer');
+  const btn = document.getElementById('addNextYearCustomSkipBtn');
+  const countEl = document.getElementById('nextYearCustomSkipCount');
+  if (!container) return;
+  const count = container.querySelectorAll('.custom-skip-row').length;
+  if (btn) btn.style.display = count >= MAX_CUSTOM_SKIPS ? 'none' : '';
+  if (countEl) {
+    if (count > 0) {
+      countEl.style.display = '';
+      countEl.textContent = count + ' / ' + MAX_CUSTOM_SKIPS + (isSpanish ? ' semanas personalizadas' : ' custom weeks');
+    } else {
+      countEl.style.display = 'none';
+    }
+  }
+}
+
+function clearNextYearCustomSkipWeeks() {
+  const container = document.getElementById('nextYearCustomSkipContainer');
+  if (container) container.innerHTML = '';
+  nextYearCustomSkipCounter = 0;
+  updateNextYearCustomSkipUI();
+}
+
+function getNextYearCustomSkipWeeks() {
+  const container = document.getElementById('nextYearCustomSkipContainer');
+  if (!container) return [];
+  const rows = container.querySelectorAll('.custom-skip-row');
+  const skips = [];
+  const seen = new Set();
+  rows.forEach(function(row) {
+    const cb = row.querySelector('input[type=checkbox]');
+    const sel = row.querySelector('select');
+    if (cb && cb.checked && sel && sel.value) {
+      const val = parseInt(sel.value);
+      if (!isNaN(val) && !seen.has(val)) {
+        seen.add(val);
+        skips.push(val);
+      }
+    }
+  });
+  return skips;
 }
 
 // =====================================================
@@ -1071,12 +1256,7 @@ function resetCrossYear() {
     const cb = document.getElementById(id);
     if (cb) cb.checked = false;
   });
-  for (let i = 1; i <= 4; i++) {
-    const cb = document.getElementById("nextYearCustomSkip" + i);
-    const sel = document.getElementById("nextYearCustomWeek" + i);
-    if (cb) cb.checked = false;
-    if (sel) sel.selectedIndex = 0;
-  }
+  clearNextYearCustomSkipWeeks();
   const w1opt = document.getElementById("nextYearWeek1PartialOption");
   if (w1opt) w1opt.style.display = "none";
 }
@@ -1119,23 +1299,15 @@ function updateNextYearWeek1Partial() {
 }
 
 function populateNextYearCustomSkipDropdowns() {
+  const container = document.getElementById('nextYearCustomSkipContainer');
+  if (!container) return;
   const nextYear = (activeStartYear || getCurrentSchoolYear()) + 1;
   const nextData = generateSchoolYear(nextYear);
-  const nextWeeks = nextData.weeks;
-  const nyl = nextData.yearLabel;
-  for (let i = 1; i <= 4; i++) {
-    const sel = document.getElementById("nextYearCustomWeek" + i);
-    if (!sel) continue;
-    sel.innerHTML = "";
-    for (let w = 0; w < nextWeeks.length; w++) {
-      const opt = document.createElement("option");
-      opt.value = w + 1;
-      opt.textContent = isSpanish
-        ? nyl + " – Semana " + (w + 1) + ": " + nextWeeks[w][1]
-        : nyl + " – Week " + (w + 1) + ": " + nextWeeks[w][0];
-      sel.appendChild(opt);
-    }
-  }
+  container.querySelectorAll('.custom-skip-row select').forEach(function(sel) {
+    const curVal = sel.value;
+    populateSingleSkipSelect(sel, nextData.weeks, nextData.yearLabel);
+    if (curVal) sel.value = curVal;
+  });
 }
 
 function updateNextYearSkipLabels() {
@@ -1146,7 +1318,9 @@ function updateNextYearSkipLabels() {
   if (lblT) lblT.textContent = isSpanish ? "Saltar semana - Acción de Gracias (Semana 22)" : "Skip Thanksgiving Week (Week 22)";
   if (lblW) lblW.textContent = isSpanish ? "Saltar vacaciones - Invierno (Semanas 26–27)" : "Skip Winter Break (Weeks 26–27)";
   if (lblS) lblS.textContent = isSpanish ? "Saltar semana - Primavera (Semana 41)" : "Skip Spring Week (Week 41)";
-  if (lblTitle) lblTitle.textContent = isSpanish ? "Semanas que planeas saltar — Próximo año (Opcional):" : "Weeks You Plan to Skip — Next Year (Optional):";
+  if (lblTitle) lblTitle.innerHTML = isSpanish
+    ? 'Semanas que planeas saltar — <span style="color:#b71c1c;">Próximo Año</span> (Opcional):'
+    : 'Weeks You Plan to Skip — <span style="color:#b71c1c;">Next Year</span> (Optional):';
 }
 
 // Build an extended date/week map spanning two school years
@@ -1768,6 +1942,14 @@ function calculateCredits() {
   const totalCredits = parseInt(document.getElementById("totalCredits").value);
   const startWeek = parseInt(document.getElementById("startWeek").value);
   let endWeek = parseInt(document.getElementById("endWeek").value);
+
+  // Guard: if inputs are empty or invalid, clear results and return
+  if (!totalCredits || isNaN(totalCredits) || totalCredits <= 0 || isNaN(startWeek) || isNaN(endWeek)) {
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("planButtons").style.display = "none";
+    return;
+  }
+
   const skipThanksgiving = document.getElementById("skipThanksgiving").checked;
   const skipWinter = document.getElementById("skipWinter").checked;
   const skipSpring = document.getElementById("skipSpring").checked;
@@ -1780,21 +1962,9 @@ function calculateCredits() {
     endWeek = extMap.totalCurrent + crossYearData.endWeekNext;
   }
 
-  const customSkips = [];
-  const selectedWeeks = new Set();
-  let duplicateFound = false;
-  for (let i = 1; i <= 4; i++) {
-    const cb = document.getElementById('customSkip' + i);
-    const sel = document.getElementById('customWeek' + i);
-    if (cb?.checked && sel?.value) {
-      const val = parseInt(sel.value);
-      if (!isNaN(val)) {
-        if (selectedWeeks.has(val)) { duplicateFound = true; }
-        else { selectedWeeks.add(val); customSkips.push(val); }
-      }
-    }
-  }
-  if (duplicateFound) {
+  const customSkipData = getCustomSkipWeeks();
+  const customSkips = customSkipData.skips;
+  if (customSkipData.duplicate) {
     document.getElementById("result").innerHTML = "<div class='warning'>You've selected the same week more than once in custom skip weeks. Each custom week must be different.</div>";
     return;
   }
@@ -1818,18 +1988,8 @@ function calculateCredits() {
     if (document.getElementById("nextYearSkipWinter")?.checked) { allSkips.push(tc + 26); allSkips.push(tc + 27); }
     if (document.getElementById("nextYearSkipSpring")?.checked) allSkips.push(tc + 41);
     // Next year's custom skips
-    const nextYearSelectedWeeks = new Set();
-    for (let i = 1; i <= 4; i++) {
-      const cb = document.getElementById("nextYearCustomSkip" + i);
-      const sel = document.getElementById("nextYearCustomWeek" + i);
-      if (cb?.checked && sel?.value) {
-        const val = parseInt(sel.value);
-        if (!isNaN(val) && !nextYearSelectedWeeks.has(val)) {
-          nextYearSelectedWeeks.add(val);
-          allSkips.push(tc + val);
-        }
-      }
-    }
+    const nextYearCustSkips = getNextYearCustomSkipWeeks();
+    nextYearCustSkips.forEach(function(val) { allSkips.push(tc + val); });
   }
   const uniqueSkips = [...new Set(allSkips)].filter(week => week >= startWeek && week <= endWeek);
 
@@ -1922,7 +2082,12 @@ function calculateCredits() {
   let bufferWarningKey = "";
   if (endWeek === 46) bufferWarningKey = "bufferWarning44";
   else if (endWeek === 45) bufferWarningKey = "bufferWarning45";
-  else if (endWeek > 46) bufferWarningKey = "bufferWarningAfter46";
+  else if (endWeek > 46) {
+    // Only show graduation ceremony warning if GP data shows this is a graduation year
+    const gpFY = parseInt(document.getElementById('gpFreshmanYear')?.value);
+    const isGradYear = gpFY && !isNaN(gpFY) && activeStartYear >= gpFY + 3;
+    if (isGradYear) bufferWarningKey = "bufferWarningAfter46";
+  }
   let bufferWarning = bufferWarningKey ? "<div class='warning'>" + getText(bufferWarningKey) + "</div>" : "";
 
   const fullWeeksAt3 = Math.floor(adjustedCredits / 3);
@@ -2372,7 +2537,19 @@ function generatePlan(type) {
     const controls = w.skip ? '<em>Skip</em>' : '<button class="minus">\u2013</button><button class="plus">+</button>';
     const boxes = [1, 2, 3, 4].map(i => {
       const id = 'wk' + w.week + '-c' + i;
-      return '<label class="chk"><input type="checkbox" id="' + id + '" />' + i + '<input type="text" class="credit-line" id="' + id + '-txt" /></label>';
+      return '<label class="chk"><input type="checkbox" id="' + id + '" />' +
+        '<span class="credit-field">' +
+        '<input type="text" class="credit-line" id="' + id + '-txt" placeholder="' + i + '" />' +
+        '<select class="subj-pick" onchange="var t=this.previousElementSibling;if(this.value===\'_custom\'){t.value=\'\';t.focus();}else if(this.value){t.value=this.value;}this.selectedIndex=0;">' +
+        '<option value="" disabled selected>▼</option>' +
+        '<option value="English">English</option>' +
+        '<option value="Math">Math</option>' +
+        '<option value="Science">Science</option>' +
+        '<option value="History">History</option>' +
+        '<option value="Elective">Elective</option>' +
+        '<option value="_custom">Custom...</option>' +
+        '</select>' +
+        '</span></label>';
     }).join('');
     // Display: for cross-year, show actual week number (not the extended number)
     const displayWeek = w.actualWeek;
@@ -2381,11 +2558,11 @@ function generatePlan(type) {
       '<td class="col-week">' + displayWeek + '</td>' +
       '<td class="' + dateCellClass + '">' + formatDateForCell(planDateRanges[w.week] || '') + '</td>' +
       '<td class="col-credits"><strong class="val">' + w.credits + '</strong></td>' +
-      '<td class="col-progress"><div class="progress-grid">' + boxes + '</div></td>' +
-      '<td class="controls col-adjust">' + controls + '</td></tr>');
+      '<td class="controls col-adjust">' + controls + '</td>' +
+      '<td class="col-progress"><div class="progress-grid">' + boxes + '</div></td></tr>');
   });
 
-  const tableStart = '<table class="planner"><colgroup><col class="col-week"><col class="col-date"><col class="col-credits"><col class="col-progress"><col class="col-adjust"></colgroup><thead><tr><th class="col-week">Week</th><th class="col-date">Date Range</th><th class="col-credits">Credits</th><th class="col-progress">Progress</th><th class="col-adjust">Adjust</th></tr></thead>';
+  const tableStart = '<table class="planner"><colgroup><col class="col-week"><col class="col-date"><col class="col-credits"><col class="col-adjust"><col class="col-progress"></colgroup><thead><tr><th class="col-week">Week</th><th class="col-date">Date Range</th><th class="col-credits">Credits</th><th class="col-adjust">Adjust</th><th class="col-progress">Progress</th></tr></thead>';
   const tableEnd = '</table>';
 
   let chunks = [];
@@ -2405,7 +2582,10 @@ function generatePlan(type) {
 
   const yearLabel = schoolYearData.yearLabel;
 
+  const pdfFilename = 'Credit_Tracker_Plan_' + type + '_' + yearLabel.replace(/\u2013/g, '-') + '.pdf';
+
   const html = '<!doctype html><html><head><meta charset="utf-8"><title>Plan ' + type + ' \u2013 ' + yearLabel + ' Credit Tracker</title>' +
+  '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>' +
   '<style>' +
   'body { font-family: Arial, sans-serif; padding: 16px; }' +
   'table { border-collapse: collapse; width: 100%; margin-top: 12px; table-layout: fixed; }' +
@@ -2435,7 +2615,11 @@ function generatePlan(type) {
   '.col-progress .progress-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; align-items: center; justify-items: center; }' +
   '.chk { display: inline-flex; align-items: center; gap: 3px; font-size: 0.85rem; white-space: nowrap; }' +
   '.chk input[type="checkbox"] { width: 14px; height: 14px; }' +
-  '.credit-line { display: inline-block; border: none; border-bottom: 1px solid #000; height: 1.1em; width: clamp(0.4in, 12vw, 0.95in); background: transparent; outline: none; font-size: 0.8rem; padding: 0 2px; font-family: Arial, sans-serif; box-sizing: border-box; }' +
+  '.credit-field { position: relative; display: inline-flex; align-items: center; }' +
+  '.credit-line { display: inline-block; border: none; border-bottom: 1px solid #000; height: 1.1em; width: clamp(0.4in, 12vw, 0.95in); background: transparent; outline: none; font-size: 0.8rem; padding: 0 2px; padding-right: 16px; font-family: Arial, sans-serif; box-sizing: border-box; }' +
+  '.credit-line::placeholder { color: #999; font-size: 0.75rem; }' +
+  '.subj-pick { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.6; cursor: pointer; border: none; background: transparent; font-size: 10px; padding: 0; -webkit-appearance: none; appearance: none; color: #666; z-index: 2; }' +
+  '.subj-pick:hover { opacity: 1; }' +
   '.credit-line:focus { border-bottom: 2px solid #1a73e8; }' +
   'col.col-week { width: 5%; } col.col-date { width: 18%; } col.col-credits { width: 6%; } col.col-progress { width: 51%; } col.col-adjust { width: 7%; }' +
   'td.col-week, th.col-week, td.col-credits, th.col-credits { font-size: 0.85rem; }' +
@@ -2444,6 +2628,9 @@ function generatePlan(type) {
   '.popup-actions { position: fixed; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 9; }' +
   '.popup-actions button { background-color: white; color: black; border: 1px solid black; padding: 8px 12px; border-radius: 6px; cursor: pointer; }' +
   '.popup-actions button:hover { background:#555; color:#fff; }' +
+  '.popup-actions button:disabled { opacity:0.6; cursor:wait; }' +
+  '.popup-actions button.btn-pdf { background:#2e7d32; color:#fff; border-color:#2e7d32; }' +
+  '.popup-actions button.btn-pdf:hover { background:#1b5e20; }' +
   '.print-tips { background: #fff3cd; border: 1px solid #ffe49a; color: #6b5b00; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; max-width: 420px; justify-self: start; align-self: start; margin-top: 0; margin-left: 10px; }' +
   '.print-tips strong { font-weight: 700; } .print-tips ul { margin: 6px 0 0 1.1em; padding: 0; } .print-tips li { margin: 2px 0; }' +
   '.topbar .tools { justify-self: start; align-self: start; display: flex; flex-direction: column; gap: 6px; margin-left: 0; margin-right: 0; }' +
@@ -2464,7 +2651,7 @@ function generatePlan(type) {
   'col.col-week { width: 5%; } col.col-date { width: 22%; } col.col-credits { width: 5%; } col.col-progress { width: 68%; }' +
   'td.col-date { overflow: visible !important; text-overflow: clip !important; }' +
   '.col-progress .progress-grid { grid-template-columns: repeat(4, 1fr); column-gap: 6px; justify-items: start; }' +
-  '.chk { font-size: 0.82rem; gap: 2px; } .chk input[type="checkbox"] { width: 12px; height: 12px; } .credit-line { width: 0.78in !important; border: none !important; border-bottom: 1px solid #000 !important; background: transparent !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; -webkit-text-fill-color: #000 !important; }' +
+  '.chk { font-size: 0.82rem; gap: 2px; } .chk input[type="checkbox"] { width: 12px; height: 12px; } .subj-pick { display: none !important; } .credit-line { width: 0.78in !important; border: none !important; border-bottom: 1px solid #000 !important; background: transparent !important; padding-right: 2px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; -webkit-text-fill-color: #000 !important; }' +
   'table.planner { margin-top: 4px !important; margin-bottom: 4px !important; }' +
   'thead th { padding-top: 3px !important; padding-bottom: 3px !important; }' +
   'td, th { padding-top: 5px !important; padding-bottom: 5px !important; }' +
@@ -2478,7 +2665,7 @@ function generatePlan(type) {
   'table.planner thead { display: table-header-group !important; page-break-inside: avoid !important; break-inside: avoid !important; }' +
   'table.planner tbody { page-break-inside: auto !important; break-inside: auto !important; } }' +
   '</style></head><body>' +
-  '<div class="popup-actions"><button id="emailBtn" onclick="emailPlan()">Email</button><button id="printBtn" onclick="window.print()">Print</button></div>' +
+  '<div class="popup-actions"><button class="btn-pdf" id="pdfBtn" onclick="savePDF()">PDF</button><button id="printBtn" onclick="window.print()">Print</button></div>' +
   '<div class="topbar"><div class="summarywrap">' +
   '<div class="summarybar"><span class="badge badge-lg">Target: <strong id="tgt">' + C + '</strong></span><span class="badge badge-lg">Assigned: <strong id="asgn">0</strong></span></div>' +
   '<div class="summarybar" style="margin-top:6px;"><span class="badge badge-lg">Remaining: <strong id="rem">0</strong></span></div>' +
@@ -2526,16 +2713,16 @@ function generatePlan(type) {
   '</div>' +
   '<div class="tools"><button id="btnSpread1">Spread 1-credit weeks evenly</button><button id="btnFill2">Spread 2-credit weeks evenly</button><button id="btnClear">Clear all to 0</button></div>' +
   '<div class="print-tips"><strong>Print Tips:</strong> For best results, set your printer settings to:<ul><li>Margins: <strong>Minimum</strong></li><li>Enable <strong>Background Graphics</strong></li></ul></div></div>' +
-  '<h2>Credit Tracker \u2013 Plan ' + type + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')' +
-  '<span style="font-weight: normal; font-size: 0.6em;"> - (Credit completion is allowed during self-selected "0" credit weeks.)</span></h2>' +
+  '<h2 style="margin-bottom:2px;">Credit Tracker \u2013 Plan ' + type + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')</h2>' +
+  '<p style="margin:0 0 2px; font-size:0.85em; color:#555;">(Credit completion is allowed during self-selected "0" credit weeks.)</p>' +
+  '<p style="margin:0 0 10px; font-size:0.85em; color:#555;">Plan created on: ' + formatEmailDate() + '</p>' +
   tablesHtml +
   '<p class="notes" style="margin-top:10px; font-size:0.95em; color:#555;">Notes: Skip weeks are locked at 0.' + (isWeek1Partial ? ' Week 1 is a partial week (highlighted in red, starts at 0 credits) \u2014 you may optionally add bonus credits using +/\u2013.' : '') + ' Per-week limit is ' + maxPerWeek + '. The table won\'t let you exceed your total target credits (' + C + ').</p>' +
   '</body></html>';
 
-  printWin.document.write(html);
-
-  // Inject behavior script
+  // Build behavior script (embedded into HTML below)
   const behavior = '(function() {' +
+    'function __init() {' +
     'var maxPerWeek = ' + maxPerWeek + ';' +
     'var target = ' + C + ';' +
     'var tables = Array.from(document.querySelectorAll("table.planner"));' +
@@ -2640,36 +2827,72 @@ function generatePlan(type) {
     'updateDeToggles();' +
     // Prevent text input clicks from toggling the parent label's checkbox
     'document.querySelectorAll(".credit-line").forEach(function(inp) { inp.addEventListener("click", function(e) { e.stopPropagation(); }); });' +
-    // Column swap logic
-    '(function() { var tables2 = Array.from(document.querySelectorAll("table.planner"));' +
-    'function swapCellsInRow(tr) { var cells = Array.from(tr.children); if(cells.length<5) return; var progress = cells[3]; var adjust = cells[4]; tr.insertBefore(adjust, progress); }' +
-    'function swapColgroup(table) { var cg = table.querySelector("colgroup"); if(!cg) return; var cols = cg.querySelectorAll("col"); if(cols.length<5) return; cg.insertBefore(cols[4], cols[3]); }' +
-    'function swapTable(table) { var theadRow = table.tHead && table.tHead.rows[0]; if(theadRow) swapCellsInRow(theadRow); Array.from(table.tBodies).forEach(function(tbody){ Array.from(tbody.rows).forEach(function(tr){ swapCellsInRow(tr); }); }); swapColgroup(table); }' +
-    'function toggleSwapAll() { tables2.forEach(swapTable); }' +
-    'toggleSwapAll();' +
-    'function beforePrint() { toggleSwapAll(); } function afterPrint() { toggleSwapAll(); }' +
-    'if("onbeforeprint" in window) { window.addEventListener("beforeprint", beforePrint); window.addEventListener("afterprint", afterPrint); }' +
-    'var mql = window.matchMedia && window.matchMedia("print");' +
-    'if(mql && typeof mql.addEventListener === "function") { mql.addEventListener("change", function(e){ if(e.matches) beforePrint(); else afterPrint(); }); }' +
-    'else if(mql && typeof mql.addListener === "function") { mql.addListener(function(e){ if(e.matches) beforePrint(); else afterPrint(); }); }' +
-    '})();' +
+    '}' +
+    'if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", __init); } else { __init(); }' +
     '})();';
 
-  const scriptEl = printWin.document.createElement('script');
-  scriptEl.textContent = behavior;
-  printWin.document.body.appendChild(scriptEl);
+  // Build PDF save function script (embedded into HTML below)
+  const pdfScriptContent =
+    'var pdfFilename = ' + JSON.stringify(pdfFilename) + ';' +
 
-  // Inject email function
-  const emailScript = printWin.document.createElement('script');
-  emailScript.textContent = 'function emailPlan() {' +
-    'var d = new Date();' +
-    'var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];' +
-    'var today = months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();' +
-    'var subject = encodeURIComponent("Credit Tracker - Plan ' + type + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')");' +
-    'var body = encodeURIComponent("Hi teacher, this is my most current weekly credit plan made on " + today + ". Please print this for me and keep a copy in my student folder. Thank you!");' +
-    'window.location.href = "mailto:?subject=" + subject + "&body=" + body;' +
+    'function getPdfOpts() {' +
+    '  return {' +
+    '    margin: [0.3, 0.2, 0.3, 0.2],' +
+    '    filename: pdfFilename,' +
+    '    image: { type: "jpeg", quality: 0.95 },' +
+    '    html2canvas: { scale: 2, useCORS: true, logging: false },' +
+    '    jsPDF: { unit: "in", format: "letter", orientation: "portrait" },' +
+    '    pagebreak: { mode: ["css", "legacy"] }' +
+    '  };' +
+    '}' +
+
+    'function prepForExport() {' +
+    '  var actions = document.querySelector(".popup-actions");' +
+    '  var tools = document.querySelector(".topbar .tools");' +
+    '  var tips = document.querySelector(".print-tips");' +
+    '  var adjustCols = document.querySelectorAll(".col-adjust");' +
+    '  if (actions) actions.style.display = "none";' +
+    '  if (tools) tools.style.display = "none";' +
+    '  if (tips) tips.style.display = "none";' +
+    '  adjustCols.forEach(function(el) { el.style.display = "none"; });' +
+    '  return { actions: actions, tools: tools, tips: tips, adjustCols: adjustCols };' +
+    '}' +
+
+    'function restoreAfterExport(els) {' +
+    '  if (els.actions) els.actions.style.display = "flex";' +
+    '  if (els.tools) els.tools.style.display = "";' +
+    '  if (els.tips) els.tips.style.display = "";' +
+    '  els.adjustCols.forEach(function(el) { el.style.display = ""; });' +
+    '}' +
+
+    'function savePDF() {' +
+    '  var btn = document.getElementById("pdfBtn");' +
+    '  var orig = btn.textContent;' +
+    '  btn.textContent = "Generating...";' +
+    '  btn.disabled = true;' +
+    '  var els = prepForExport();' +
+    '  html2pdf().set(getPdfOpts()).from(document.body).save().then(function() {' +
+    '    restoreAfterExport(els);' +
+    '    btn.textContent = orig;' +
+    '    btn.disabled = false;' +
+    '  }).catch(function(err) {' +
+    '    restoreAfterExport(els);' +
+    '    btn.textContent = orig;' +
+    '    btn.disabled = false;' +
+    '    alert("PDF generation failed: " + err.message);' +
+    '  });' +
     '}';
-  printWin.document.body.appendChild(emailScript);
+
+  // Embed the scripts inline in the HTML and write the document in one shot.
+  // This guarantees both scripts are parsed AFTER the table rows, so the
+  // listener-attachment code never runs against an empty/partial DOM —
+  // which is what was causing the popup to need a second open to work.
+  const fullHtml = html.replace('</body></html>',
+    '<' + 'script>' + behavior + '<' + '/script>' +
+    '<' + 'script>' + pdfScriptContent + '<' + '/script>' +
+    '</body></html>');
+
+  printWin.document.write(fullHtml);
   printWin.document.close();
 }
 
@@ -2813,8 +3036,18 @@ function applyTranslations() {
   const removeOP2Btn = document.getElementById("removeOP2Btn");
   if (removeOP2Btn) removeOP2Btn.textContent = isSpanish ? "✕ Eliminar" : "✕ Remove";
 
+  // Custom skip week buttons
+  const addSkipBtn = document.getElementById("addCustomSkipBtn");
+  if (addSkipBtn) addSkipBtn.textContent = isSpanish ? "+ Agregar una semana personalizada para saltar" : "+ Add a custom week to skip";
+  const addNextSkipBtn = document.getElementById("addNextYearCustomSkipBtn");
+  if (addNextSkipBtn) addNextSkipBtn.textContent = isSpanish ? "+ Agregar una semana personalizada para saltar" : "+ Add a custom week to skip";
+  updateCustomSkipUI();
+  updateNextYearCustomSkipUI();
+
   const skipBoxTitleEl = document.getElementById("skipBoxTitle");
-  if (skipBoxTitleEl) skipBoxTitleEl.textContent = getText("Weeks You Plan to Skip - Current Year (Optional):");
+  if (skipBoxTitleEl) skipBoxTitleEl.innerHTML = isSpanish
+    ? 'Semanas que planeas saltar - <span style="color:#b71c1c;">Año Actual</span> (Opcional):'
+    : 'Weeks You Plan to Skip - <span style="color:#b71c1c;">Current Year</span> (Optional):';
 
   // Update next year notice if visible
   const notice = document.getElementById("nextYearNotice");
@@ -2851,16 +3084,48 @@ function formatEmailDate() {
   return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
-function emailPage() {
-  const yearLabel = schoolYearData.yearLabel;
-  const today = formatEmailDate();
-  const subject = encodeURIComponent(isSpanish
-    ? 'Plan de Créditos Semanales - ' + yearLabel
-    : 'Weekly Credit Plan - ' + yearLabel);
-  const body = encodeURIComponent(isSpanish
-    ? 'Hola maestro/a, este es mi plan de créditos semanales más reciente, hecho el ' + today + '. Por favor imprímalo y guarde una copia en mi carpeta de estudiante. ¡Gracias!'
-    : 'Hi teacher, this is my most current weekly credit plan made on ' + today + '. Please print this for me and keep a copy in my student folder. Thank you!');
-  window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+function getMainPdfOpts() {
+  const yearLabel = schoolYearData ? schoolYearData.yearLabel : '';
+  return {
+    margin: [0.3, 0.2, 0.3, 0.2],
+    filename: 'Weekly_Credit_Plan_' + yearLabel.replace(/–/g, '-') + '.pdf',
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+}
+
+function prepMainForExport() {
+  const topActions = document.querySelector('.top-actions');
+  const langBtn = document.getElementById('langToggleBtn');
+  if (topActions) topActions.style.display = 'none';
+  if (langBtn) langBtn.style.display = 'none';
+  return { topActions, langBtn };
+}
+
+function restoreMainAfterExport(els) {
+  if (els.topActions) els.topActions.style.display = 'flex';
+  if (els.langBtn) els.langBtn.style.display = '';
+}
+
+function saveMainPDF() {
+  const btn = document.getElementById('pdfButton');
+  const orig = btn.textContent;
+  btn.textContent = 'Generating...';
+  btn.disabled = true;
+  const els = prepMainForExport();
+  const container = document.querySelector('.container');
+  html2pdf().set(getMainPdfOpts()).from(container).save().then(function() {
+    restoreMainAfterExport(els);
+    btn.textContent = orig;
+    btn.disabled = false;
+  }).catch(function(err) {
+    restoreMainAfterExport(els);
+    btn.textContent = orig;
+    btn.disabled = false;
+    alert('PDF generation failed: ' + err.message);
+  });
 }
 
 function toggleLanguage() {
@@ -3159,7 +3424,7 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
     }
     if(showUseBtn&&p.isCur&&p.credits>0){
       html+='<button class="gp-use-btn" onclick="useCreditsInCalculator('+p.credits+','+cfgSW+','+cfgEW+',false,0)">'
-        +(isSpanish?'➡️ Enviar '+p.credits+' créditos a calculadora — Año '+p.hsYr:'➡️ Send '+p.credits+' credits to calculator — Yr '+p.hsYr)
+        +(isSpanish?'Click para enviar '+p.credits+' créditos a calculadora — Año '+p.hsYr:'Click to send '+p.credits+' credits to calculator — Yr '+p.hsYr)
         +'</button>';
     }
     html+='</div>';
@@ -3169,8 +3434,8 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
       html+='<div style="margin:2px 0 8px;">'
         +'<button class="gp-use-btn" onclick="useCreditsInCalculator('+combinedCredits+','+cfgSW+','+cfgEW+',true,'+cfgNW+')">'
         +(isSpanish
-          ?'📅 Enviar '+combinedCredits+' créditos a calculadora — Año '+curP.hsYr+' + '+p.hsYr
-          :'📅 Send '+combinedCredits+' credits to calculator — Yr '+curP.hsYr+' + '+p.hsYr)
+          ?'Click para enviar '+combinedCredits+' créditos a calculadora — Año '+curP.hsYr+' + '+p.hsYr
+          :'Click to send '+combinedCredits+' credits to calculator — Yr '+curP.hsYr+' + '+p.hsYr)
         +'</button></div>';
     }
   });
@@ -3277,10 +3542,10 @@ function calcGradPlan(){
     curEndWk:_curP5?(_curP5.isGrad?46:syData.totalWeeks):syData.totalWeeks,
     nextEndWk:_nxtP5?(_nxtP5.isGrad?46:generateSchoolYear(_nxtP5.sy).totalWeeks):46
   };
-  // Section 1 — Traditional plan (always shown, dark-blue bordered container)
+  // Section 1 — Traditional plan
   html+='<div class="gp-plan-section gp-plan-traditional">';
   html+='<div class="gp-section-label">'
-    +(isSpanish?'Plan Tradicional — Clase de '+classOf:'Traditional Plan — Class of '+classOf)
+    +(isSpanish?'Opción 1: Plan Tradicional — Clase de '+classOf:'Option 1: Traditional Plan — Class of '+classOf)
     +(leftover4>0?' <span>'
       +(isSpanish?'('+leftover4+' créditos no caben)':'('+leftover4+' credits won\'t fit)')
       +'</span>':'')
@@ -3289,17 +3554,24 @@ function calcGradPlan(){
   html+='</div>';
   // Sections 2 & 3 appear when benchmarks are missed or credits won't fit in 4 years
   if(hasHighPace){
-    // Section 2 — Y5 lighter option (medium-blue bordered container)
+    // -Or- divider
+    html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+    // Section 2 — Y5 lighter option
     html+='<div class="gp-plan-section gp-plan-extended">';
     html+='<div class="gp-section-label">'
-      +(isSpanish?'Opción: Añadir un Año — Clase de '+(classOf+1):'Option: Add a Year — Class of '+(classOf+1))
+      +(isSpanish?'Opción 2: Añadir un Año — Clase de '+(classOf+1):'Option 2: Add a Year — Class of '+(classOf+1))
       +'</div>';
     html+=gpRenderRows(periods5,true,combined5,calcConfig5);
     html+='</div>';
-    // Section 3 — GYA option (Year 2+ only, red card)
+    // -Or- divider before GYA
+    if(gyaEligible){
+      html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+    }
+    // Section 3 — GYA option (Year 2+ only, proper Option 3 card)
     if(gyaEligible){
       html+='<div class="gp-int-card gp-int-gya" style="font-size:0.95em;">';
-      html+='<div style="text-align:center;"><strong style="font-size:1.05em;">🏕️ '+(isSpanish?'Opción: Grizzly Youth Academy (GYA)':'Option: Grizzly Youth Academy (GYA)')+'</strong></div>';
+      html+='<div style="text-align:center;"><strong style="font-size:1.05em;">'
+        +(isSpanish?'Opción 3: Grizzly Youth Academy (GYA)':'Option 3: Grizzly Youth Academy (GYA)')+'</strong></div>';
       html+='<p style="margin:5px 0 8px;">'
         +(isSpanish
           ?'GYA es un programa de un semestre que otorga hasta 60 créditos (una sola vez, para estudiantes de 16–18 años). Los cohortes comienzan en julio y en enero cada año escolar.'
@@ -3414,20 +3686,14 @@ document.addEventListener("DOMContentLoaded", () => {
   ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipWinter", "nextYearSkipSpring"].forEach(function(id) {
     document.getElementById(id).addEventListener("change", calculateCredits);
   });
-  for (let i = 1; i <= 4; i++) {
-    document.getElementById("nextYearCustomSkip" + i).addEventListener("change", calculateCredits);
-    document.getElementById("nextYearCustomWeek" + i).addEventListener("change", calculateCredits);
-  }
+  // (Next-year custom skip events are wired dynamically in addNextYearCustomSkipWeek)
 
   // Auto-calculate: current-year skip checkboxes
   document.getElementById("skipWeek1Partial").addEventListener("change", calculateCredits);
   document.getElementById("skipThanksgiving").addEventListener("change", calculateCredits);
   document.getElementById("skipWinter").addEventListener("change", calculateCredits);
   document.getElementById("skipSpring").addEventListener("change", calculateCredits);
-  for (let i = 1; i <= 4; i++) {
-    document.getElementById('customSkip' + i).addEventListener("change", calculateCredits);
-    document.getElementById('customWeek' + i).addEventListener("change", calculateCredits);
-  }
+  // (Current-year custom skip events are wired dynamically in addCustomSkipWeek)
 
   // Auto-calculate: dual enrollment inputs
   document.getElementById("deToggle").addEventListener("change", function() { updateDeUI(); calculateCredits(); });
