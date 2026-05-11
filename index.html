@@ -2544,18 +2544,14 @@ function generatePlan(type) {
     return '<span class="date-core">' + str + '</span>';
   }
 
-  // Chunking is re-enabled on iOS / small viewports. iOS Safari does NOT
-  // reliably repeat <thead> across print pages via display:table-header-group,
-  // so we instead split the rows into multiple tables and force a page break
-  // before each one — every chunk has its own thead, which guarantees that
-  // every printed page starts with the column header row. We also show every
-  // chunk's thead in screen + PDF so the layout is identical from the first
-  // chunk to the last (the previous mismatch in the PDF was caused by the
-  // screen CSS hiding theads on chunks 2+). Row counts were lowered from
-  // 16/23 to 14/20 to give buffer for DE/OP highlight rendering.
-  const isIOS = /iPhone|iPad|iPod/i.test(printWin.navigator.userAgent || '');
-  const isSmallViewport = printWin.matchMedia && printWin.matchMedia('(max-width: 900px)').matches;
-  const shouldSplit = isIOS || isSmallViewport;
+  // Chunking is always on. The popup splits rows into multiple <table>
+  // elements (each with its own <thead>) so every printed/PDF page starts
+  // with the column header row. Browsers (and html2pdf in particular) do
+  // not reliably repeat a single <thead> across pages via
+  // display:table-header-group, so we give each page its own thead by
+  // making each page its own table. Row counts (14 first, 20 subsequent)
+  // are sized to fit a letter-portrait page with DE/OP highlights active.
+  const shouldSplit = true;
   const maxRowsFirst = 14;
   const maxRowsNext = 20;
 
@@ -2907,7 +2903,11 @@ function generatePlan(type) {
     '    image: { type: "jpeg", quality: 0.95 },' +
     '    html2canvas: { scale: 2, useCORS: true, logging: false },' +
     '    jsPDF: { unit: "in", format: "letter", orientation: "portrait" },' +
-    '    pagebreak: { mode: ["css", "legacy"] }' +
+    // Force a hard page break before every chunk after the first. html2pdf
+    // ignores CSS page-break-before on its own, so we tell it explicitly
+    // which DOM nodes should start a new page. Each chunk has its own thead
+    // (see prepForExport), so every PDF page starts with the column header.
+    '    pagebreak: { mode: ["css", "legacy"], before: ".print-chunk + .print-chunk" }' +
     '  };' +
     '}' +
 
