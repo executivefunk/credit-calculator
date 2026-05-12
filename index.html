@@ -2685,11 +2685,13 @@ function generatePlan(type) {
   '@media screen and (min-width: 1024px) { .topbar .tools { position: relative; left: -77px; } }' +
   '@media screen { .page-cut { display: none !important; } table.planner { border-collapse: collapse; width: 100%; } .print-chunk { break-inside: auto; page-break-inside: auto; }' +
   '.print-chunk + .page-cut + .print-chunk table.planner, .print-chunk ~ .print-chunk table.planner { margin-top: -1px; border-top: 0; }' +
-  // Show the column-header row on EVERY chunk's table, not just the first.
-  // Hiding it on subsequent chunks made the first chunk look different from
-  // later chunks in the PDF (the first chunk had a header row, the rest
-  // didn't), and in print it meant pages after the first chunk had no header.
-  '.print-chunk table.planner thead, .print-chunk:first-of-type table.planner thead, .print-chunk ~ .print-chunk table.planner thead { display: table-header-group !important; } }' +
+  // On-screen: show the column header only on the first chunk, so the popup
+  // reads as one continuous table without the "Week / Date Range / Credits /
+  // Adjust / Progress" row appearing every ~20 rows. The print CSS (@media
+  // print) and the prepForExport JS both force every chunk to display its
+  // thead, so PDF and Print still get the header on every page.
+  '.print-chunk:first-of-type table.planner thead { display: table-header-group !important; }' +
+  '.print-chunk ~ .print-chunk table.planner thead { display: none !important; } }' +
   '.notes { display: none !important; }' +
   '@media print { @page { size: letter portrait; margin: 0.4in; } body { padding: 0 !important; }' +
   '.topbar, h2 { page-break-before: avoid !important; break-before: avoid !important; page-break-after: avoid !important; break-after: avoid !important; }' +
@@ -2924,10 +2926,15 @@ function generatePlan(type) {
     '  if (tools) tools.style.display = "none";' +
     '  if (tips) tips.style.display = "none";' +
     '  adjustCols.forEach(function(el) { el.style.display = "none"; });' +
-    // Force every chunk to show its column header so the PDF is consistent
-    // (without this, the screen CSS hides the thead on chunks 2+, which
-    // makes the first chunk look different from the rest in the exported PDF).
-    '  theads.forEach(function(t) { t.dataset.prevDisplay = t.style.display || ""; t.style.display = "table-header-group"; });' +
+    // Force every chunk to show its column header so the PDF is consistent.
+    // The screen CSS hides theads on chunks 2+ with "display: none !important"
+    // — to win against !important we must set the inline style with the
+    // "important" priority via setProperty, otherwise the inline value loses.
+    '  theads.forEach(function(t) {' +
+    '    t.dataset.prevDisplay = t.style.getPropertyValue("display");' +
+    '    t.dataset.prevDisplayPri = t.style.getPropertyPriority("display");' +
+    '    t.style.setProperty("display", "table-header-group", "important");' +
+    '  });' +
     '  return { actions: actions, tools: tools, tips: tips, adjustCols: adjustCols, theads: theads };' +
     '}' +
 
@@ -2936,7 +2943,11 @@ function generatePlan(type) {
     '  if (els.tools) els.tools.style.display = "";' +
     '  if (els.tips) els.tips.style.display = "";' +
     '  els.adjustCols.forEach(function(el) { el.style.display = ""; });' +
-    '  if (els.theads) els.theads.forEach(function(t) { t.style.display = t.dataset.prevDisplay || ""; delete t.dataset.prevDisplay; });' +
+    '  if (els.theads) els.theads.forEach(function(t) {' +
+    '    t.style.removeProperty("display");' +
+    '    if (t.dataset.prevDisplay) t.style.setProperty("display", t.dataset.prevDisplay, t.dataset.prevDisplayPri || "");' +
+    '    delete t.dataset.prevDisplay; delete t.dataset.prevDisplayPri;' +
+    '  });' +
     '}' +
 
     'function savePDF() {' +
