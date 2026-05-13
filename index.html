@@ -2578,7 +2578,23 @@ function generatePlan(type) {
   const isIOS = /iPhone|iPad|iPod/i.test(printWin.navigator.userAgent || '');
   const isSmallViewport = printWin.matchMedia && printWin.matchMedia('(max-width: 900px)').matches;
   const shouldSplit = isIOS || isSmallViewport;
-  const maxRowsFirst = 16;
+  // When a DE or OP class is active, the popup topbar shows an extra
+  // "You will be earning X credits from…" notice plus its "Show ..." toggle
+  // — roughly one row of vertical space per active class. With the default
+  // 16-row first chunk, those extra notices push rows off the bottom of
+  // page 1 and onto page 2, where they sit stranded above the forced
+  // page-break to chunk 2. Count how many highlights are active and
+  // shrink the first chunk by ~2 rows per active class (a safety margin
+  // over the actual ~1 row each notice costs, in case class names wrap
+  // to a second line). Floor at 8 rows so a plan with all four highlights
+  // still gets a usable first page. Subsequent chunks always have 23 rows
+  // because they have no topbar above them.
+  const highlightCount =
+    ((deData && deData.de1 && deData.de1.active) ? 1 : 0) +
+    ((deData && deData.de2 && deData.de2.active) ? 1 : 0) +
+    ((opData && opData.op1 && opData.op1.active) ? 1 : 0) +
+    ((opData && opData.op2 && opData.op2.active) ? 1 : 0);
+  const maxRowsFirst = Math.max(8, 16 - highlightCount * 2);
   const maxRowsNext = 23;
 
   // Year divider row for cross-year plans
