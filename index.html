@@ -154,7 +154,7 @@ select {
    needs ~0.6em to stay on one line, and the "Opción 1: Plan Tradicional —
    Clase de 2028" section label needs ~0.68em with white-space:nowrap. */
 @media (max-width: 480px){
-  .gp-use-btn{font-size:0.6em;padding:8px 4px;white-space:nowrap;letter-spacing:-0.01em;overflow:hidden;}
+  .gp-use-btn{font-size:0.52em;padding:8px 4px;white-space:nowrap;letter-spacing:-0.02em;overflow:hidden;}
   .gp-header{padding:10px 12px;}
   .gp-header-title{font-size:0.92em;line-height:1.2;}
   .gp-header-arrow{font-size:1em;right:10px;}
@@ -175,7 +175,7 @@ select {
   .gp-or-divider span{font-size:0.76em;}
 }
 @media (max-width: 360px){
-  .gp-use-btn{font-size:0.52em;padding:7px 3px;letter-spacing:-0.02em;}
+  .gp-use-btn{font-size:0.44em;padding:7px 2px;letter-spacing:-0.03em;}
   .gp-header-title{font-size:0.84em;}
   .gp-year-label{font-size:0.8em;}
   .gp-year-sub{font-size:0.68em;}
@@ -734,6 +734,22 @@ let weeks = [];       // populated from schoolYearData
 let storedPlan = {};
 let lastResultData = null;
 
+// Tracks whether the student has manually toggled each of the holiday
+// skip-week checkboxes. Once a key is true, the auto-affordability logic
+// in autoSetHealthySkips() will not overwrite that checkbox — the
+// student's explicit choice always wins. Cleared on year switch and on
+// language-prompt reset so the auto-logic can take over fresh.
+let userToggledSkips = {
+  thanksgiving: false, winter: false, spring: false,
+  nextYearThanksgiving: false, nextYearWinter: false, nextYearSpring: false
+};
+function resetUserToggledSkips() {
+  userToggledSkips = {
+    thanksgiving: false, winter: false, spring: false,
+    nextYearThanksgiving: false, nextYearWinter: false, nextYearSpring: false
+  };
+}
+
 function initializeYear(year) {
   activeStartYear = year;
   schoolYearData = generateSchoolYear(year);
@@ -761,6 +777,7 @@ function switchYear(mode) {
   document.getElementById("skipThanksgiving").checked = false;
   document.getElementById("skipWinter").checked = false;
   document.getElementById("skipSpring").checked = false;
+  resetUserToggledSkips();
   clearCustomSkipWeeks();
   resetDualEnrollment();
   resetOutsideProgram();
@@ -1001,6 +1018,7 @@ function showLanguagePrompt() {
     document.getElementById("skipThanksgiving").checked = false;
     document.getElementById("skipWinter").checked = false;
     document.getElementById("skipSpring").checked = false;
+    resetUserToggledSkips();
     clearCustomSkipWeeks();
     resetDualEnrollment();
     resetOutsideProgram();
@@ -2006,6 +2024,66 @@ function isWeekInOp(op, weekNum, isCurrentYear, actualWeek) {
 // =====================================================
 // CALCULATE CREDITS
 // =====================================================
+// If the student has enough total weeks that taking the standard healthy
+// breaks (Thanksgiving + Winter + Spring, in each active school year) still
+// lets them finish their credit target at a sustainable ≤ 2 cr/wk pace,
+// pre-check those boxes for them. If they can't afford it, uncheck them.
+// In either case, never overwrite a box the student has manually toggled
+// (tracked via userToggledSkips). Called at the top of calculateCredits.
+function autoSetHealthySkips() {
+  const totalCredits = parseInt(document.getElementById('totalCredits').value);
+  const startWeek = parseInt(document.getElementById('startWeek').value);
+  let endWeek = parseInt(document.getElementById('endWeek').value);
+  if (!totalCredits || isNaN(startWeek) || isNaN(endWeek)) return;
+
+  const crossYearData = getCrossYearData();
+  if (crossYearData.active) {
+    const extMap = buildExtendedMap(crossYearData);
+    endWeek = extMap.totalCurrent + crossYearData.endWeekNext;
+  }
+  const totalWeeks = endWeek - startWeek + 1;
+  if (totalWeeks <= 0) return;
+
+  // Baseline skips that are independent of the holiday auto-toggle:
+  // skipWeek1Partial, custom skips, and their next-year equivalents. (OP
+  // forced-skips and DE non-classes aren't counted here — they don't
+  // change between "with breaks" and "without breaks", so they cancel
+  // out of the affordability comparison.)
+  const skipWeek1 = document.getElementById('skipWeek1Partial')?.checked || false;
+  const customSkipData = getCustomSkipWeeks();
+  let baselineSkips = (skipWeek1 ? 1 : 0) + customSkipData.skips.length;
+  if (crossYearData.active) {
+    const nextW1 = document.getElementById('nextYearSkipWeek1Partial')?.checked || false;
+    const nextCustom = getNextYearCustomSkipWeeks();
+    baselineSkips += (nextW1 ? 1 : 0) + nextCustom.length;
+  }
+
+  // Holiday breaks = Thanksgiving (1w) + Winter (2w) + Spring (1w) = 4w/yr
+  const holidaysPerYear = 4;
+  const totalHolidays = crossYearData.active ? holidaysPerYear * 2 : holidaysPerYear;
+
+  // Sustainable pace threshold matches the rest of the app (grad planner
+  // pace badge, etc.). The student "can afford" the holidays if all their
+  // credits fit at ≤ 2 cr/wk with those weeks removed from the schedule.
+  const SUSTAINABLE_PACE = 2;
+  const usableWeeks = totalWeeks - baselineSkips - totalHolidays;
+  const canAffordHolidays = usableWeeks > 0 && totalCredits <= usableWeeks * SUSTAINABLE_PACE;
+
+  function setIfNotUserToggled(id, key) {
+    if (userToggledSkips[key]) return;
+    const el = document.getElementById(id);
+    if (el) el.checked = canAffordHolidays;
+  }
+  setIfNotUserToggled('skipThanksgiving', 'thanksgiving');
+  setIfNotUserToggled('skipWinter', 'winter');
+  setIfNotUserToggled('skipSpring', 'spring');
+  if (crossYearData.active) {
+    setIfNotUserToggled('nextYearSkipThanksgiving', 'nextYearThanksgiving');
+    setIfNotUserToggled('nextYearSkipWinter', 'nextYearWinter');
+    setIfNotUserToggled('nextYearSkipSpring', 'nextYearSpring');
+  }
+}
+
 function calculateCredits() {
   const totalCredits = parseInt(document.getElementById("totalCredits").value);
   const startWeek = parseInt(document.getElementById("startWeek").value);
@@ -2017,6 +2095,12 @@ function calculateCredits() {
     document.getElementById("planButtons").style.display = "none";
     return;
   }
+
+  // Auto-toggle the holiday-break checkboxes (Thanksgiving / Winter / Spring,
+  // plus the next-year equivalents when cross-year is active) based on
+  // whether the target still fits at a sustainable pace with those breaks
+  // taken. Skips boxes the student has manually toggled.
+  autoSetHealthySkips();
 
   const skipThanksgiving = document.getElementById("skipThanksgiving").checked;
   const skipWinter = document.getElementById("skipWinter").checked;
@@ -3527,33 +3611,61 @@ function calcGradPlan(){
     curEndWk:_curP5?(_curP5.isGrad?46:syData.totalWeeks):syData.totalWeeks,
     nextEndWk:_nxtP5?(_nxtP5.isGrad?46:generateSchoolYear(_nxtP5.sy).totalWeeks):46
   };
-  // Section 1 — Traditional plan
+  // Section 1 — Traditional plan.
+  // When some credits won't fit in 4 years, we still print the section title
+  // (so the student sees that Option 1 was considered), but the "(N credits
+  // won't fit)" notice gets its own line below the title so it never wraps
+  // awkwardly across the green title bar. We also skip rendering the weekly
+  // breakdown rows in that case — Option 1 isn't actually a workable plan,
+  // so showing the rows would be misleading.
+  const opt1WontFit = leftover4 > 0;
   html+='<div class="gp-plan-section gp-plan-traditional">';
   html+='<div class="gp-section-label">'
     +(isSpanish?'Opción 1: Plan Tradicional — Clase de '+classOf:'Option 1: Traditional Plan — Class of '+classOf)
-    +(leftover4>0?' <span>'
-      +(isSpanish?'('+leftover4+' créditos no caben)':'('+leftover4+' credits won\'t fit)')
-      +'</span>':'')
     +'</div>';
-  html+=gpRenderRows(periods4,true,combined4,calcConfig4);
+  if(opt1WontFit){
+    html+='<p style="text-align:center;color:#c62828;font-weight:bold;font-size:0.95em;margin:8px 0 2px;line-height:1.3;">'
+      +(isSpanish?'('+leftover4+' créditos no caben)':'('+leftover4+' credits won\'t fit)')
+      +'</p>';
+  } else {
+    html+=gpRenderRows(periods4,true,combined4,calcConfig4);
+  }
   html+='</div>';
   // Sections 2 & 3 appear when benchmarks are missed or credits won't fit in 4 years
   if(hasHighPace){
     // -Or- divider
     html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
-    // Section 2 — Y5 lighter option
+    // Section 2 — Y5 lighter option.
+    // If the max pace across the 5-year plan is still above 2 cr/wk, the
+    // student is in tough enough territory that an automated even-distribution
+    // plan isn't a fair recommendation. Replace the rows with a friendly
+    // counselor-referral message in that case.
+    const maxPace5 = periods5.length > 0 ? Math.max(...periods5.map(p=>p.pace)) : 0;
+    const opt2NeedsCounselor = maxPace5 > 2.0;
     html+='<div class="gp-plan-section gp-plan-extended">';
     html+='<div class="gp-section-label">'
       +(isSpanish?'Opción 2: Añadir un Año — Clase de '+(classOf+1):'Option 2: Add a Year — Class of '+(classOf+1))
       +'</div>';
-    html+=gpRenderRows(periods5,true,combined5,calcConfig5);
-    html+='</div>';
-    // -Or- divider before GYA
-    if(gyaEligible){
-      html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+    if(opt2NeedsCounselor){
+      html+='<div class="gp-int-card" style="background:#fff8e1;border:1px solid #ffcc02;font-size:0.95em;line-height:1.45;">'
+        +'🗓️ <strong>'+(isSpanish?'Habla con tu consejero/a escolar':'Talk with your school counselor')+'</strong><br>'
+        +(isSpanish
+          ?'Para terminar a tiempo necesitarás un plan personalizado. Agenda una cita pronto con tu consejero/a escolar para diseñar juntos el mejor camino para ti.'
+          :'Finishing on time will need a customized plan with extra support. Set up an appointment soon with your school counselor so you can design the best path together.')
+        +'</div>';
+    } else {
+      html+=gpRenderRows(periods5,true,combined5,calcConfig5);
     }
-    // Section 3 — GYA option (Year 2+ only, proper Option 3 card)
-    if(gyaEligible){
+    html+='</div>';
+    // Section 3 — GYA option (Year 2+ only). Hide the entire card if GYA
+    // isn't actually a working solution: leftoverGya>0 means credits still
+    // don't fit even with GYA's 60 credits, and maxPaceGya>2.0 means GYA
+    // still leaves the student above a sustainable pace. In either case
+    // showing GYA would mislead the student into thinking it solves the
+    // problem when it doesn't.
+    const gyaWorks = gyaEligible && leftoverGya===0 && maxPaceGya<=2.0;
+    if(gyaWorks){
+      html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
       html+='<div class="gp-int-card gp-int-gya" style="font-size:0.95em;">';
       html+='<div style="text-align:center;"><strong style="font-size:1.05em;">'
         +(isSpanish?'Opción 3: Grizzly Youth Academy (GYA)':'Option 3: Grizzly Youth Academy (GYA)')+'</strong></div>';
@@ -3576,17 +3688,8 @@ function calcGradPlan(){
           ?'Si el/la estudiante completa GYA, su plan tradicional de 4 años se vería así:'
           :'If the student completes GYA, the traditional 4-year plan would look like this:')
         +'</p>';
-      if(maxPaceGya<=2.0){
-        html+='<p style="color:#b71c1c;font-weight:bold;margin:0 0 8px;font-size:0.85em;text-align:center;line-height:1.25;">✅ '
-          +(isSpanish?'Con GYA, todos los años tendrían ritmo sostenible (≤ 2 cr/sem).':'With GYA, all years at a sustainable pace (≤ 2 cr/wk).')+'</p>';
-      } else if(maxPaceGya<=2.5){
-        html+='<p style="color:#b71c1c;margin:0 0 8px;">⚠️ '
-          +(isSpanish?'Con GYA, el ritmo mejora significativamente.':'With GYA, the pace improves significantly.')+'</p>';
-      }
-      if(leftoverGya>0){
-        html+='<p style="color:#c62828;margin:0 0 8px;">⚠️ '
-          +(isSpanish?'Incluso con GYA, quedan '+leftoverGya+' créditos sin asignar. Considera también el año extra.':'Even with GYA, '+leftoverGya+' credits remain unassigned. Also consider the extra year option.')+'</p>';
-      }
+      html+='<p style="color:#b71c1c;font-weight:bold;margin:0 0 8px;font-size:0.85em;text-align:center;line-height:1.25;">✅ '
+        +(isSpanish?'Con GYA, todos los años tendrían ritmo sostenible (≤ 2 cr/sem).':'With GYA, all years at a sustainable pace (≤ 2 cr/wk).')+'</p>';
       html+=gpRenderRows(periods4gya,false,0);
       html+='</div>';
     }
@@ -3679,18 +3782,32 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("crossYearToggle").addEventListener("change", function() { updateCrossYearUI(); populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
   document.getElementById("endWeekNext").addEventListener("change", function() { populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
 
-  // Auto-calculate: next-year skip checkboxes
-  ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipWinter", "nextYearSkipSpring"].forEach(function(id) {
-    document.getElementById(id).addEventListener("change", calculateCredits);
+  // Skip checkboxes that the auto-affordability logic in autoSetHealthySkips()
+  // is allowed to manage. When the student manually toggles any of these,
+  // record the choice in userToggledSkips so the auto-logic never overwrites
+  // it on a later recalculation. Week 1 partial skips are NOT auto-managed
+  // (they're a structural plan setting, not a healthy-break preference).
+  const HEALTHY_SKIP_MAP = {
+    skipThanksgiving: 'thanksgiving',
+    skipWinter: 'winter',
+    skipSpring: 'spring',
+    nextYearSkipThanksgiving: 'nextYearThanksgiving',
+    nextYearSkipWinter: 'nextYearWinter',
+    nextYearSkipSpring: 'nextYearSpring'
+  };
+  Object.keys(HEALTHY_SKIP_MAP).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("change", function() {
+      userToggledSkips[HEALTHY_SKIP_MAP[id]] = true;
+      calculateCredits();
+    });
   });
-  // (Next-year custom skip events are wired dynamically in addNextYearCustomSkipWeek)
 
-  // Auto-calculate: current-year skip checkboxes
+  // Non-managed skip checkboxes (Week 1 partial — current and next year)
+  document.getElementById("nextYearSkipWeek1Partial").addEventListener("change", calculateCredits);
   document.getElementById("skipWeek1Partial").addEventListener("change", calculateCredits);
-  document.getElementById("skipThanksgiving").addEventListener("change", calculateCredits);
-  document.getElementById("skipWinter").addEventListener("change", calculateCredits);
-  document.getElementById("skipSpring").addEventListener("change", calculateCredits);
-  // (Current-year custom skip events are wired dynamically in addCustomSkipWeek)
+  // (Custom skip events are wired dynamically in addCustomSkipWeek / addNextYearCustomSkipWeek)
 
   // Auto-calculate: dual enrollment inputs
   document.getElementById("deToggle").addEventListener("change", function() { updateDeUI(); calculateCredits(); });
