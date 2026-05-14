@@ -2024,12 +2024,23 @@ function isWeekInOp(op, weekNum, isCurrentYear, actualWeek) {
 // =====================================================
 // CALCULATE CREDITS
 // =====================================================
-// If the student has enough total weeks that taking the standard healthy
-// breaks (Thanksgiving + Winter + Spring, in each active school year) still
-// lets them finish their credit target at a sustainable ≤ 2 cr/wk pace,
-// pre-check those boxes for them. If they can't afford it, uncheck them.
-// In either case, never overwrite a box the student has manually toggled
-// (tracked via userToggledSkips). Called at the top of calculateCredits.
+// Pre-check the holiday-break checkboxes (Thanksgiving, Winter, Spring —
+// plus the next-year set when cross-year is active) up to the maximum the
+// student can afford. The student "can afford" a break-week whenever
+// promoting that 0-credit week into the workload would still let the
+// target be hit at ≤ 2 cr/wk: i.e. any time their non-holiday pace is
+// already below 2 cr/wk, the unused slack can be spent on rest weeks.
+//
+// We compute a "holiday budget" = (usableWeeksWithoutHolidays) − ceil(target/2),
+// which is exactly the number of extra weeks beyond the minimum needed
+// to fit all credits at a sustainable 2 cr/wk pace. We then greedily
+// allocate that budget to holidays, taking Winter (2 contiguous weeks)
+// first since it's the most restorative single break, then Thanksgiving,
+// then Spring; current-year holidays before next-year ones.
+//
+// User manual choices (tracked in userToggledSkips) are always honored:
+// their cost is deducted from the budget BEFORE auto-allocation so the
+// remaining slack is what the auto-pass has to spend.
 function autoSetHealthySkips() {
   const totalCredits = parseInt(document.getElementById('totalCredits').value);
   const startWeek = parseInt(document.getElementById('startWeek').value);
@@ -2037,18 +2048,17 @@ function autoSetHealthySkips() {
   if (!totalCredits || isNaN(startWeek) || isNaN(endWeek)) return;
 
   const crossYearData = getCrossYearData();
+  let totalCurrent = 0;
   if (crossYearData.active) {
     const extMap = buildExtendedMap(crossYearData);
-    endWeek = extMap.totalCurrent + crossYearData.endWeekNext;
+    totalCurrent = extMap.totalCurrent;
+    endWeek = totalCurrent + crossYearData.endWeekNext;
   }
   const totalWeeks = endWeek - startWeek + 1;
   if (totalWeeks <= 0) return;
 
-  // Baseline skips that are independent of the holiday auto-toggle:
-  // skipWeek1Partial, custom skips, and their next-year equivalents. (OP
-  // forced-skips and DE non-classes aren't counted here — they don't
-  // change between "with breaks" and "without breaks", so they cancel
-  // out of the affordability comparison.)
+  // Baseline skips that don't move with the holiday auto-toggle:
+  // skipWeek1Partial, custom skips, and their next-year equivalents.
   const skipWeek1 = document.getElementById('skipWeek1Partial')?.checked || false;
   const customSkipData = getCustomSkipWeeks();
   let baselineSkips = (skipWeek1 ? 1 : 0) + customSkipData.skips.length;
@@ -2058,30 +2068,65 @@ function autoSetHealthySkips() {
     baselineSkips += (nextW1 ? 1 : 0) + nextCustom.length;
   }
 
-  // Holiday breaks = Thanksgiving (1w) + Winter (2w) + Spring (1w) = 4w/yr
-  const holidaysPerYear = 4;
-  const totalHolidays = crossYearData.active ? holidaysPerYear * 2 : holidaysPerYear;
-
-  // Sustainable pace threshold matches the rest of the app (grad planner
-  // pace badge, etc.). The student "can afford" the holidays if all their
-  // credits fit at ≤ 2 cr/wk with those weeks removed from the schedule.
+  // Slack in weeks: usable weeks (without any holidays subtracted) minus
+  // the minimum weeks required to fit the target at the sustainable cap.
   const SUSTAINABLE_PACE = 2;
-  const usableWeeks = totalWeeks - baselineSkips - totalHolidays;
-  const canAffordHolidays = usableWeeks > 0 && totalCredits <= usableWeeks * SUSTAINABLE_PACE;
+  const usableNoHolidays = totalWeeks - baselineSkips;
+  const minWeeksNeeded = Math.ceil(totalCredits / SUSTAINABLE_PACE);
+  let budget = Math.max(0, usableNoHolidays - minWeeksNeeded);
 
-  function setIfNotUserToggled(id, key) {
-    if (userToggledSkips[key]) return;
-    const el = document.getElementById(id);
-    if (el) el.checked = canAffordHolidays;
+  // Does this specific holiday week fall inside the student's plan range?
+  // If their plan is, say, weeks 30–46, Thanksgiving (week 22) doesn't
+  // apply — there's no point auto-checking a box that wouldn't change
+  // anything in the calc.
+  function inRange(week, isNextYear) {
+    const actualWeek = isNextYear ? totalCurrent + week : week;
+    return actualWeek >= startWeek && actualWeek <= endWeek;
   }
-  setIfNotUserToggled('skipThanksgiving', 'thanksgiving');
-  setIfNotUserToggled('skipWinter', 'winter');
-  setIfNotUserToggled('skipSpring', 'spring');
-  if (crossYearData.active) {
-    setIfNotUserToggled('nextYearSkipThanksgiving', 'nextYearThanksgiving');
-    setIfNotUserToggled('nextYearSkipWinter', 'nextYearWinter');
-    setIfNotUserToggled('nextYearSkipSpring', 'nextYearSpring');
-  }
+
+  // Candidates in priority order: Winter (2-week continuous break) first,
+  // then Thanksgiving (1 week), then Spring (1 week). Within each break,
+  // current year is preferred over next year so the student gets the
+  // sooner relief first.
+  const candidates = [
+    { id: 'skipWinter',               key: 'winter',              weeks: 2,
+      applicable: inRange(26, false) && inRange(27, false) },
+    { id: 'nextYearSkipWinter',       key: 'nextYearWinter',      weeks: 2,
+      applicable: crossYearData.active && inRange(26, true) && inRange(27, true) },
+    { id: 'skipThanksgiving',         key: 'thanksgiving',        weeks: 1,
+      applicable: inRange(22, false) },
+    { id: 'nextYearSkipThanksgiving', key: 'nextYearThanksgiving', weeks: 1,
+      applicable: crossYearData.active && inRange(22, true) },
+    { id: 'skipSpring',               key: 'spring',              weeks: 1,
+      applicable: inRange(41, false) },
+    { id: 'nextYearSkipSpring',       key: 'nextYearSpring',      weeks: 1,
+      applicable: crossYearData.active && inRange(41, true) }
+  ];
+
+  // Pass 1: subtract the weight of any user-checked boxes from the budget
+  // up front. User choices are always honored; the auto-pass only gets to
+  // spend what's left.
+  candidates.forEach(function(c) {
+    if (!c.applicable) return;
+    if (!userToggledSkips[c.key]) return;
+    const el = document.getElementById(c.id);
+    if (el && el.checked) budget -= c.weeks;
+  });
+
+  // Pass 2: greedily auto-toggle the remaining boxes. Take each holiday
+  // if its weight fits within the remaining budget; otherwise uncheck it.
+  candidates.forEach(function(c) {
+    if (!c.applicable) return;
+    if (userToggledSkips[c.key]) return;
+    const el = document.getElementById(c.id);
+    if (!el) return;
+    if (budget >= c.weeks) {
+      el.checked = true;
+      budget -= c.weeks;
+    } else {
+      el.checked = false;
+    }
+  });
 }
 
 function calculateCredits() {
