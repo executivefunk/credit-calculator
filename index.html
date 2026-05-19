@@ -386,7 +386,7 @@ select {
         <input type="checkbox" id="skipSpring">
         <label for="skipSpring" id="labelSpring">Skip Spring Week (Week 41)</label>
       </div>
-      <hr style="margin: 10px 0;">
+      <hr id="customSkipDivider" style="margin: 10px 0;">
       <div id="customSkipContainer"></div>
       <button type="button" id="addCustomSkipBtn" onclick="addCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
       <p id="customSkipCount" style="font-size:0.75em;color:#999;text-align:center;margin:4px 0 0;display:none;"></p>
@@ -772,6 +772,10 @@ function switchYear(mode) {
   // Update Week 1 partial checkbox for new year
   updateWeek1Partial();
 
+  // The current-year start week may have changed after re-populating the
+  // dropdown — refresh the custom-skip button's visibility accordingly.
+  updateCustomSkipVisibility();
+
   // Clear results and inputs
   document.getElementById("totalCredits").value = "";
   document.getElementById("skipThanksgiving").checked = false;
@@ -1131,6 +1135,28 @@ function clearCustomSkipWeeks() {
   if (container) container.innerHTML = '';
   customSkipCounter = 0;
   updateCustomSkipUI();
+}
+
+// The current-year "+ Add a custom week to skip" button (and its divider)
+// is only useful when the student has already passed every standard
+// holiday week — Week 1 partial, Thanksgiving (22), Winter (26-27), and
+// Spring (41). Before that, the standard checkboxes above already cover
+// every default skippable week, so the custom-skip button just adds
+// visual clutter. Hide it (and the divider) until startWeek > 41.
+// Existing custom-skip rows remain visible regardless (each has its
+// own remove control), so a student doesn't lose entries by changing
+// their start week.
+function updateCustomSkipVisibility() {
+  const startWeekEl = document.getElementById('startWeek');
+  const divider = document.getElementById('customSkipDivider');
+  const button = document.getElementById('addCustomSkipBtn');
+  if (!startWeekEl) return;
+  const startWeek = parseInt(startWeekEl.value);
+  // 41 = Spring Week, the latest standard holiday checkbox above
+  const LAST_STANDARD_HOLIDAY_WEEK = 41;
+  const show = !isNaN(startWeek) && startWeek > LAST_STANDARD_HOLIDAY_WEEK;
+  if (divider) divider.style.display = show ? '' : 'none';
+  if (button) button.style.display = show ? '' : 'none';
 }
 
 function getCustomSkipWeeks() {
@@ -3820,8 +3846,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Auto-calculate: main inputs
   document.getElementById("totalCredits").addEventListener("input", calculateCredits);
   document.getElementById("totalCredits").addEventListener("keydown", function(e) { if (e.key === "Enter") e.preventDefault(); });
-  document.getElementById("startWeek").addEventListener("change", calculateCredits);
+  document.getElementById("startWeek").addEventListener("change", function() { updateCustomSkipVisibility(); calculateCredits(); });
   document.getElementById("endWeek").addEventListener("change", function() { populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
+
+  // Initial state for the custom-skip button visibility (it depends on startWeek)
+  updateCustomSkipVisibility();
 
   // Auto-calculate: cross-year planning
   document.getElementById("crossYearToggle").addEventListener("change", function() { updateCrossYearUI(); populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
