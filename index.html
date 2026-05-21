@@ -118,10 +118,12 @@ select {
 .top-actions button:hover { background-color: #555; color: white; }
 /* GRADUATION PLANNER */
 .grad-planner{background:#f0f4ff;border:2px solid #b0c4de;border-radius:10px;margin-bottom:18px;overflow:hidden;}
-.gp-header{display:flex;justify-content:center;align-items:center;padding:12px 16px;cursor:pointer;background:#e8f0fe;user-select:none;position:relative;}
+.gp-header{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px 11px;cursor:pointer;background:#e8f0fe;user-select:none;gap:1px;}
 .gp-header:hover{background:#dce8fc;}
+.gp-header-hint{font-size:0.72em;color:#4a6789;font-weight:500;opacity:0.85;letter-spacing:0.01em;}
+.gp-header-row{display:inline-flex;align-items:center;gap:8px;flex-wrap:nowrap;}
 .gp-header-title{font-weight:bold;font-size:1.05em;color:#1a3a6b;word-wrap:break-word;overflow-wrap:break-word;}
-.gp-header-arrow{color:#4a90d9;font-size:1.1em;transition:transform 0.25s;flex-shrink:0;position:absolute;right:16px;}
+.gp-header-arrow{color:#4a90d9;font-size:1em;transition:transform 0.25s;flex-shrink:0;}
 .gp-body{padding:14px 16px 16px;}
 .gp-inputs{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
 .gp-inputs>div{flex:1;min-width:140px;}
@@ -155,9 +157,10 @@ select {
    Clase de 2028" section label needs ~0.68em with white-space:nowrap. */
 @media (max-width: 480px){
   .gp-use-btn{font-size:0.52em;padding:8px 4px;white-space:nowrap;letter-spacing:-0.02em;overflow:hidden;}
-  .gp-header{padding:10px 12px;}
+  .gp-header{padding:7px 12px 9px;}
+  .gp-header-hint{font-size:0.68em;}
   .gp-header-title{font-size:0.92em;line-height:1.2;}
-  .gp-header-arrow{font-size:1em;right:10px;}
+  .gp-header-arrow{font-size:0.92em;}
   .gp-body{padding:11px 12px 12px;}
   .gp-header-bar{font-size:0.78em;padding:8px 10px;}
   .gp-year-row{padding:9px 11px;}
@@ -283,9 +286,12 @@ select {
 
   <!-- GRADUATION CREDIT PLANNER -->
   <div class="grad-planner" id="gradPlanner">
-    <div class="gp-header" onclick="toggleGradPlanner()">
-      <span class="gp-header-title">🎓 Graduation Credit Planner</span>
-      <span class="gp-header-arrow" id="gpArrow">▼</span>
+    <div class="gp-header" onclick="toggleGradPlanner()" role="button" aria-haspopup="true" aria-expanded="false" id="gpHeader">
+      <span class="gp-header-hint" id="gpHint">Switch tool</span>
+      <span class="gp-header-row">
+        <span class="gp-header-title">🎓 Graduation Credit Planner</span>
+        <span class="gp-header-arrow" id="gpArrow">▼</span>
+      </span>
     </div>
     <div class="gp-body" id="gpBody" style="display:none;">
       <p id="gpDescription" style="font-size:0.88em;color:#555;margin:0 0 12px;">Enter your freshman start year and credits remaining to see your year-by-year plan toward graduation (230 credits total).</p>
@@ -3264,6 +3270,8 @@ function applyTranslations() {
   // Update Graduation Planner description and recalculate
   const gpDesc = document.getElementById('gpDescription');
   if (gpDesc) gpDesc.textContent = isSpanish ? translations.gpDescriptionES : translations.gpDescriptionEN;
+  const gpHintEl = document.getElementById('gpHint');
+  if (gpHintEl) gpHintEl.textContent = isSpanish ? "Cambiar herramienta" : "Switch tool";
   populateGpFreshmanDropdown();
   calcGradPlan();
 }
@@ -3290,10 +3298,12 @@ function toggleLanguage() {
 function toggleGradPlanner(){
   const body=document.getElementById('gpBody');
   const arrow=document.getElementById('gpArrow');
+  const header=document.getElementById('gpHeader');
   if(!body||!arrow)return;
   const isOpen=body.style.display!=='none';
   body.style.display=isOpen?'none':'block';
   arrow.textContent=isOpen?'▼':'▲';
+  if(header)header.setAttribute('aria-expanded',isOpen?'false':'true');
 }
 function populateGpFreshmanDropdown(){
   const sel=document.getElementById('gpFreshmanYear');
