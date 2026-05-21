@@ -374,19 +374,19 @@ select {
         <input type="checkbox" id="skipWeek1Partial" checked>
         <label for="skipWeek1Partial" id="labelWeek1Partial"></label>
       </div>
-      <div class="holiday-option">
+      <div class="holiday-option" id="thanksgivingOption">
         <input type="checkbox" id="skipThanksgiving">
         <label for="skipThanksgiving" id="labelThanksgiving">Skip Thanksgiving Week (Week 22)</label>
       </div>
-      <div class="holiday-option">
+      <div class="holiday-option" id="winterOption">
         <input type="checkbox" id="skipWinter">
         <label for="skipWinter" id="labelWinter">Skip Winter Break (Weeks 26–27)</label>
       </div>
-      <div class="holiday-option">
+      <div class="holiday-option" id="springOption">
         <input type="checkbox" id="skipSpring">
         <label for="skipSpring" id="labelSpring">Skip Spring Week (Week 41)</label>
       </div>
-      <hr style="margin: 10px 0;">
+      <hr id="customSkipDivider" style="margin: 10px 0;">
       <div id="customSkipContainer"></div>
       <button type="button" id="addCustomSkipBtn" onclick="addCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
       <p id="customSkipCount" style="font-size:0.75em;color:#999;text-align:center;margin:4px 0 0;display:none;"></p>
@@ -772,6 +772,10 @@ function switchYear(mode) {
   // Update Week 1 partial checkbox for new year
   updateWeek1Partial();
 
+  // The current-year start week may have changed after re-populating the
+  // dropdown — refresh the custom-skip button's visibility accordingly.
+  updateCustomSkipVisibility();
+
   // Clear results and inputs
   document.getElementById("totalCredits").value = "";
   document.getElementById("skipThanksgiving").checked = false;
@@ -814,6 +818,14 @@ function updateWeek1Partial() {
   if (!schoolYearData.week1Partial) {
     option.style.display = 'none';
     cb.checked = false;
+    return;
+  }
+
+  // Hide when the student is starting past week 1
+  const startSelW1 = document.getElementById("startWeek");
+  const startWkW1 = startSelW1 && startSelW1.value ? parseInt(startSelW1.value) : 1;
+  if (startWkW1 > 1) {
+    option.style.display = 'none';
     return;
   }
 
@@ -1131,6 +1143,28 @@ function clearCustomSkipWeeks() {
   if (container) container.innerHTML = '';
   customSkipCounter = 0;
   updateCustomSkipUI();
+}
+
+// Hide each current-year holiday checkbox (Week 1 partial, Thanksgiving,
+// Winter, Spring) individually once the student's chosen startWeek has
+// already passed that holiday's week. Driven by startWeek alone. Checked
+// state is preserved so that if startWeek moves back below a threshold
+// the prior selection returns. The "+ Add a custom week to skip" button
+// and its divider are intentionally NOT touched here — they remain
+// permanently visible (subject only to the MAX_CUSTOM_SKIPS cap handled
+// in updateCustomSkipUI).
+function updateCustomSkipVisibility() {
+  const startWeekEl = document.getElementById('startWeek');
+  if (!startWeekEl) return;
+  const startWeek = startWeekEl.value ? parseInt(startWeekEl.value) : 1;
+  const thx = document.getElementById('thanksgivingOption');
+  const wnt = document.getElementById('winterOption');
+  const spr = document.getElementById('springOption');
+  if (thx) thx.style.display = startWeek > 22 ? 'none' : '';
+  if (wnt) wnt.style.display = startWeek > 27 ? 'none' : '';
+  if (spr) spr.style.display = startWeek > 41 ? 'none' : '';
+  // Re-evaluate Week 1 (which also depends on startWeek)
+  updateWeek1Partial();
 }
 
 function getCustomSkipWeeks() {
@@ -3820,8 +3854,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Auto-calculate: main inputs
   document.getElementById("totalCredits").addEventListener("input", calculateCredits);
   document.getElementById("totalCredits").addEventListener("keydown", function(e) { if (e.key === "Enter") e.preventDefault(); });
-  document.getElementById("startWeek").addEventListener("change", calculateCredits);
+  document.getElementById("startWeek").addEventListener("change", function() { updateCustomSkipVisibility(); calculateCredits(); });
   document.getElementById("endWeek").addEventListener("change", function() { populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
+
+  // Initial state for the custom-skip button visibility (it depends on startWeek)
+  updateCustomSkipVisibility();
 
   // Auto-calculate: cross-year planning
   document.getElementById("crossYearToggle").addEventListener("change", function() { updateCrossYearUI(); populateDeDropdowns(); populateOpDropdowns(); calculateCredits(); });
