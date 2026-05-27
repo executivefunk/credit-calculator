@@ -214,46 +214,131 @@ select {
 
 @media print {
   @page { size: letter portrait; margin: 0.5in; }
-  .top-actions { display: none; }
+
+  /* === BASE PRINT RESET === */
   body { background: white !important; margin: 0; padding: 0; }
   .container { max-width: 100% !important; box-shadow: none !important; border-radius: 0 !important; padding: 12px !important; }
-  .print-page-1 { page-break-after: always; }
-  #langToggleBtn, #languagePrompt, .year-toggle { display: none !important; }
-  table, tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
-  .force-page-break { page-break-before: always !important; }
 
-  /* Packet layout: keep every labeled section intact across page breaks.
-     The browser may move a section to a new page rather than splitting it
-     in half, which is what we want for a printed handout. */
+  /* === HIDE UI CHROME FROM PRINT ===
+     Buttons, language switcher, dropdown chrome, and the inline result
+     block (the popup Credit Tracker is the canonical printable output). */
+  .top-actions { display: none; }
+  #langToggleBtn, #languagePrompt, .year-toggle { display: none !important; }
+  .gp-header-hint, .gp-header-arrow { display: none !important; }
+  #result, #planButtons { display: none !important; }
+
+  /* === GRADUATION PLANNER ===
+     When the dropdown body is collapsed it's pure navigation chrome —
+     skip it from print entirely. When the user has expanded it, give
+     the planner its own page at the very top of the printout. */
+  .grad-planner:not(:has(#gpBody[style*="block"])) {
+    display: none !important;
+  }
+  .grad-planner:has(#gpBody[style*="block"]) {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+  /* Strip the clickable header bar's interactive look for print but keep
+     the title text — it acts as the page heading. */
+  .grad-planner .gp-header {
+    background: transparent !important;
+    padding: 0 0 8px !important;
+    cursor: default !important;
+  }
+
+  /* === HEADER + MAIN INPUTS = page 1 of the calculator === */
+  .print-page-1 {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  /* === CROSS-YEAR PLANNING ===
+     The "Extend my plan into next year" checkbox stays inline with the
+     main inputs on page 1. When the user has toggled it on, the expanded
+     inputs (including the nested next-year skip box) get their own page. */
+  #crossYearInner[style*="block"] {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* === CURRENT-YEAR SKIP BOX ===
+     Always its own page. When cross-year is active this box is moved
+     (via JS) into crossYearInner — the id selector still matches it
+     in either DOM location, so it gets a fresh page either way. */
+  #currentYearSkipBox {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* === DUAL ENROLLMENT ===
+     Page break only when the user has actually opened the section
+     (.de-inner becomes .visible). Closed = stays inline as a one-line
+     toggle, no wasted page. */
+  .de-box:has(.de-inner.visible) {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* === OUTSIDE PROGRAM ===
+     Same pattern. (opInner shares the .de-inner class in markup.) */
+  .op-box:has(.de-inner.visible) {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* === FOOTER DISCLAIMER ===
+     Pushed to its own final page so it isn't crammed under another section. */
+  .footer-disclaimer {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* === KEEP-TOGETHER RULES ===
+     Individual cards/sections should not split mid-content where possible. */
   .disclaimer,
   .warning,
   .next-year-notice,
   .holiday-box,
   .de-class-box,
   #crossYearBox,
-  #crossYearInner,
   #nextYearSkipBox,
   #currentYearSkipBox,
-  .grad-planner,
   .gp-plan-section,
   .gp-year-row,
   .gp-int-card,
   .gp-intervention,
-  .plan-buttons,
   .footer-disclaimer {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  /* Allow the outer DE/OP boxes themselves to break if the two class cards
-     don't both fit on one page — but each .de-class-box still stays intact. */
-  .de-box, .op-box { page-break-inside: auto !important; break-inside: auto !important; }
+  /* Long containers that may legitimately exceed one page need to be
+     allowed to break — otherwise the browser strands them awkwardly. */
+  .de-box, .op-box, #crossYearInner, .grad-planner {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* === SMALL POLISH === */
   /* Never strand a heading or label at the bottom of a page. */
-  h2, h3, h4, label { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
-  /* Keep an input together with its label by treating label+input as a unit. */
-  label + input, label + select, label + textarea { page-break-before: avoid !important; break-before: avoid !important; }
-  /* Result blocks (the credit-distribution summary) should print as units. */
-  .output > div, #result > div { page-break-inside: avoid !important; break-inside: avoid !important; }
-  /* Give a little breathing room at the top of new pages. */
+  h2, h3, h4, label {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Keep an input glued to its label. */
+  label + input, label + select, label + textarea {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+  }
+  /* Tables stay intact. */
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Legacy escape hatch. */
+  .force-page-break { page-break-before: always !important; }
+  /* A little breathing room at the top of continuation pages. */
   .print-page-2 { padding-top: 4px; }
 }
 </style>
