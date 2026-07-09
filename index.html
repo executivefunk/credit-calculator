@@ -466,11 +466,11 @@ select {
     <div id="nextYearNotice" class="next-year-notice" style="display: none;"></div>
 
     <div id="mainDisclaimer" class="disclaimer" style="margin-bottom: 15px;">
-      This calculator is designed for students who plan to graduate this school year.
+      This calculator works for one school year, or two years combined if you extend your plan into next year.
       <br><br>
-      If you're planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.
+      Planning your full path to graduation? Use the Graduation Credit Planner above.
       <br><br>
-      Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.
+      Talk with your teacher to decide how many credits to aim for, then use that number below.
     </div>
     <label for="totalCredits">How many credits do you need to finish?</label>
     <input type="number" id="totalCredits" min="1" max="100" required>
@@ -1130,11 +1130,9 @@ const translations = {
   "Calculate": "Calcular",
   "Disclaimer:": "Aviso:",
   "This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.": "Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos y el n\u00famero de semanas. Si no est\u00e1s seguro, habla con tu maestro o consejero escolar.",
-  "This calculator is designed for students who plan to graduate this school year.": "Esta calculadora est\u00e1 dise\u00f1ada para estudiantes que planean graduarse este a\u00f1o escolar.",
-  "If you're planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.": "Si planeas graduarte el pr\u00f3ximo a\u00f1o o despu\u00e9s, a\u00fan puedes usarla para establecer una meta de cr\u00e9ditos para el a\u00f1o o semestre.",
   "Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.": "Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos necesitas, luego usa ese n\u00famero en la calculadora.",
-  "mainDisclaimerFull": "This calculator is designed for students who plan to graduate this school year.<br><br>If you're planning to graduate next year or later, you can still use it to set a credit goal for the school year or semester.<br><br>Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.",
-  "mainDisclaimerFull_ES": "Esta calculadora est\u00e1 dise\u00f1ada para estudiantes que planean graduarse este a\u00f1o escolar.<br><br>Si planeas graduarte el pr\u00f3ximo a\u00f1o o despu\u00e9s, igual puedes usarla para establecer una meta de cr\u00e9ditos para el a\u00f1o o semestre escolar.<br><br>Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos deber\u00edas completar y usa ese n\u00famero en la calculadora.",
+  "mainDisclaimerFull": "This calculator works for one school year, or two years combined if you extend your plan into next year.<br><br>Planning your full path to graduation? Use the Graduation Credit Planner above.<br><br>Talk with your teacher to decide how many credits to aim for, then use that number below.",
+  "mainDisclaimerFull_ES": "Esta calculadora funciona para un a\u00f1o escolar, o dos a\u00f1os combinados si extiendes tu plan al pr\u00f3ximo a\u00f1o escolar.<br><br>\u00bfPlaneando tu camino completo hacia la graduaci\u00f3n? Usa el Planificador de Cr\u00e9ditos de Graduaci\u00f3n arriba.<br><br>Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos deber\u00edas completar y usa ese n\u00famero abajo.",
   "footerDisclaimerFull": "<strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.",
   "footerDisclaimerFull_ES": "<strong>Aviso:</strong> Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos totales y cu\u00e1ntas semanas tienes.<br>Si no est\u00e1s seguro, habla con tu maestro o consejero escolar para revisar tu plan.",
   "I have a dual-enrollment class": "Tengo una clase de doble inscripci\u00f3n",
@@ -1212,6 +1210,9 @@ function showLanguagePrompt() {
     populateDeDropdowns();
     populateOpDropdowns();
     populateNextYearCustomSkipDropdowns();
+    // Full reset: snap the start week back to the current week (the
+    // language-toggle preserve behavior must not apply here).
+    displayCurrentDateAndWeek();
     var notice = document.getElementById("nextYearNotice");
     if (notice) notice.style.display = 'none';
   }, 300);
@@ -1522,6 +1523,7 @@ function updateCrossYearUI() {
 function populateCrossYearDropdown() {
   const sel = document.getElementById("endWeekNext");
   if (!sel) return;
+  const prev = sel.value;
   sel.innerHTML = "";
   const nextYear = (activeStartYear || getCurrentSchoolYear()) + 1;
   const nextData = generateSchoolYear(nextYear);
@@ -1534,6 +1536,12 @@ function populateCrossYearDropdown() {
       : nextData.yearLabel + ' – Week ' + (i + 1) + ': ' + nextWeeks[i][0];
     sel.appendChild(opt);
   }
+  // Restore the student's previous selection when still valid; otherwise
+  // default to next year's Week 46 (the graduation-ceremony credit
+  // deadline) rather than the browser's "first option" fallback of Week 1.
+  sel.value = (prev && parseInt(prev) >= 1 && parseInt(prev) <= nextWeeks.length)
+    ? prev
+    : String(Math.min(46, nextData.totalWeeks));
 }
 
 function resetCrossYear() {
@@ -1544,7 +1552,11 @@ function resetCrossYear() {
   const endWeekSel = document.getElementById("endWeek");
   if (endWeekSel) endWeekSel.disabled = false;
   const selNext = document.getElementById("endWeekNext");
-  if (selNext) selNext.selectedIndex = 0;
+  if (selNext && selNext.options.length > 0) {
+    // Reset to the default finish week (next year's Week 46, the
+    // graduation deadline), clamped to the options actually available.
+    selNext.value = String(Math.min(46, selNext.options.length));
+  }
   // Reset next-year skip checkboxes
   ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipWinter", "nextYearSkipSpring"].forEach(function(id) {
     const cb = document.getElementById(id);
@@ -3274,7 +3286,7 @@ function generatePlan(type) {
 // =====================================================
 // DISPLAY CURRENT DATE AND WEEK (uses generated data)
 // =====================================================
-function displayCurrentDateAndWeek() {
+function displayCurrentDateAndWeek(preserveStartWeek) {
   const today = new Date();
   const isoStarts = schoolYearData.isoStarts;
   const yearStart = new Date(schoolYearData.startYear, 6, 1);
@@ -3283,17 +3295,22 @@ function displayCurrentDateAndWeek() {
   const startWeekSelect = document.getElementById("startWeek");
   let label;
 
+  // When preserveStartWeek is true (e.g. a mid-session language toggle),
+  // keep the student's existing start-week selection and only refresh the
+  // date/week labels. Fresh loads and year switches still auto-select.
+  const keepSelection = preserveStartWeek && startWeekSelect && startWeekSelect.value;
+
   // Default start week: Week 2 if Week 1 is partial and skip checkbox is checked, otherwise Week 1
   const week1SkipChecked = document.getElementById("skipWeek1Partial")?.checked || false;
   const defaultStart = (schoolYearData.week1Partial && week1SkipChecked) ? 2 : 1;
 
   if (today > yearEnd) {
     // Past school year
-    if (startWeekSelect) startWeekSelect.value = defaultStart;
+    if (startWeekSelect && !keepSelection) startWeekSelect.value = defaultStart;
     label = isSpanish ? '\ud83d\udcc5 Este a\u00f1o escolar ha terminado' : '\ud83d\udcc5 This school year has ended';
   } else if (today < yearStart) {
     // Future school year
-    if (startWeekSelect) startWeekSelect.value = defaultStart;
+    if (startWeekSelect && !keepSelection) startWeekSelect.value = defaultStart;
     label = isSpanish
       ? '\ud83d\udcc5 El a\u00f1o escolar ' + schoolYearData.yearLabel + ' a\u00fan no ha comenzado'
       : '\ud83d\udcc5 The ' + schoolYearData.yearLabel + ' school year has not started yet';
@@ -3310,7 +3327,7 @@ function displayCurrentDateAndWeek() {
     }
     // If we're in Week 1 but it's partial, start from Week 2
     if (currentWeek === 1 && schoolYearData.week1Partial) currentWeek = 2;
-    if (startWeekSelect) startWeekSelect.value = currentWeek;
+    if (startWeekSelect && !keepSelection) startWeekSelect.value = currentWeek;
     label = isSpanish
       ? '\ud83d\udcc5 Semana actual: ' + currentWeek
       : '\ud83d\udcc5 Current Week: ' + currentWeek;
@@ -3451,7 +3468,8 @@ function applyTranslations() {
   updateNextYearSkipLabels();
   updateNextYearWeek1Partial();
   populateNextYearCustomSkipDropdowns();
-  displayCurrentDateAndWeek();
+  // preserve the student's start-week selection across language switches
+  displayCurrentDateAndWeek(true);
   updateYearToggle();
   renderResult();
   // Update Graduation Planner description and recalculate
