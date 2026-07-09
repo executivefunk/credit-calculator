@@ -909,6 +909,13 @@ function initializeYear(year) {
   weeks = schoolYearData.weeks;
 }
 
+// Default "finish by" week: Week 46 is the graduation-ceremony credit
+// deadline in every school year. Clamped to the year's actual week count
+// so this can never produce an invalid selection in a future year.
+function getDefaultFinishWeek() {
+  return Math.min(46, schoolYearData.totalWeeks);
+}
+
 // =====================================================
 // YEAR TOGGLE
 // =====================================================
@@ -918,7 +925,7 @@ function switchYear(mode) {
   initializeYear(newYear);
   updateYearToggle();
   populateWeekDropdowns();
-  document.getElementById("endWeek").value = "46";
+  document.getElementById("endWeek").value = String(getDefaultFinishWeek());
   displayCurrentDateAndWeek();
 
   // Update Week 1 partial checkbox for new year
@@ -935,12 +942,14 @@ function switchYear(mode) {
   document.getElementById("skipSpring").checked = false;
   resetUserToggledSkips();
   clearCustomSkipWeeks();
+  // Reset/rebuild the cross-year controls BEFORE the DE/OP dropdowns,
+  // because populateDeDropdowns/populateOpDropdowns read #endWeekNext.
+  resetCrossYear();
+  populateCrossYearDropdown();
   resetDualEnrollment();
   resetOutsideProgram();
   populateDeDropdowns();
   populateOpDropdowns();
-  resetCrossYear();
-  populateCrossYearDropdown();
   populateNextYearCustomSkipDropdowns();
   document.getElementById("result").innerHTML = "";
   document.getElementById("planButtons").style.display = "none";
@@ -1195,9 +1204,13 @@ function showLanguagePrompt() {
     initializeYear(getCurrentSchoolYear());
     updateYearToggle();
     updateWeek1Partial();
+    // Give the finish week its real default before rebuilding the DE/OP
+    // dropdowns (they cap their week lists at #endWeek's value), and
+    // rebuild the cross-year dropdown before them too (#endWeekNext).
+    document.getElementById("endWeek").value = String(getDefaultFinishWeek());
+    populateCrossYearDropdown();
     populateDeDropdowns();
     populateOpDropdowns();
-    populateCrossYearDropdown();
     populateNextYearCustomSkipDropdowns();
     var notice = document.getElementById("nextYearNotice");
     if (notice) notice.style.display = 'none';
@@ -1212,6 +1225,8 @@ function populateWeekDropdowns() {
   const endSelect = document.getElementById("endWeek");
   if (!startSelect || !endSelect) return;
   const yl = schoolYearData.yearLabel;
+  const prevStart = startSelect.value;
+  const prevEnd = endSelect.value;
   startSelect.innerHTML = "";
   endSelect.innerHTML = "";
   for (let i = 0; i < weeks.length; i++) {
@@ -1224,6 +1239,13 @@ function populateWeekDropdowns() {
     startSelect.appendChild(opt1);
     endSelect.appendChild(opt2);
   }
+  // Restore previous selections when still valid; otherwise apply safe
+  // defaults. Defaulting the end week HERE (instead of relying on callers
+  // to set it afterwards) guarantees that any function reading #endWeek —
+  // e.g. populateDeDropdowns / populateOpDropdowns — always sees a real
+  // finish week, never the browser's "first option" fallback of Week 1.
+  startSelect.value = (prevStart && parseInt(prevStart) >= 1 && parseInt(prevStart) <= weeks.length) ? prevStart : "1";
+  endSelect.value = (prevEnd && parseInt(prevEnd) >= 1 && parseInt(prevEnd) <= weeks.length) ? prevEnd : String(getDefaultFinishWeek());
   // Repopulate any existing dynamic custom skip dropdowns
   populateCustomSkipSelects();
 }
@@ -1813,11 +1835,16 @@ function populateDeDropdowns() {
     if (prev && parseInt(prev) <= maxWeek) sel.value = prev;
   });
 
-  // Populate next-year end week dropdowns (capped at cross-year finish week)
+  // Populate next-year end week dropdowns. Only cap at the cross-year
+  // finish week when cross-year planning is actually enabled — otherwise
+  // #endWeekNext just holds its default first option ("Week 1") and would
+  // wrongly shrink these lists to a single week.
   const nextYear = (activeStartYear || getCurrentSchoolYear()) + 1;
   const nextYearData = generateSchoolYear(nextYear);
   const nextWeeks = nextYearData.weeks;
-  const finishWeekNext = parseInt(document.getElementById("endWeekNext")?.value) || nextWeeks.length;
+  const finishWeekNext = isCrossYearActive
+    ? (parseInt(document.getElementById("endWeekNext")?.value) || nextWeeks.length)
+    : nextWeeks.length;
   ["de1EndNext", "de2EndNext"].forEach(function(id) {
     const sel = document.getElementById(id);
     if (!sel) return;
@@ -2104,7 +2131,11 @@ function populateOpDropdowns() {
   const nextYear = (activeStartYear || getCurrentSchoolYear()) + 1;
   const nextYearData = generateSchoolYear(nextYear);
   const nextWeeks = nextYearData.weeks;
-  const finishWeekNext = parseInt(document.getElementById("endWeekNext")?.value) || nextWeeks.length;
+  // Same rule as populateDeDropdowns: the cross-year finish week only
+  // applies when cross-year planning is enabled.
+  const finishWeekNext = isCrossYearActive
+    ? (parseInt(document.getElementById("endWeekNext")?.value) || nextWeeks.length)
+    : nextWeeks.length;
 
   ["op1EndNext", "op2EndNext"].forEach(function(id) {
     const sel = document.getElementById(id);
@@ -3409,14 +3440,17 @@ function applyTranslations() {
   }
 
   updateWeek1Partial();
+  // ORDER MATTERS: rebuild the main week dropdowns (which preserve the
+  // student's current selections and otherwise default the finish week)
+  // and the cross-year dropdown BEFORE the DE/OP dropdowns, because those
+  // read #endWeek / #endWeekNext to decide how many weeks to offer.
   populateWeekDropdowns();
+  populateCrossYearDropdown();
   populateDeDropdowns();
   populateOpDropdowns();
-  populateCrossYearDropdown();
   updateNextYearSkipLabels();
   updateNextYearWeek1Partial();
   populateNextYearCustomSkipDropdowns();
-  document.getElementById("endWeek").value = "46";
   displayCurrentDateAndWeek();
   updateYearToggle();
   renderResult();
@@ -4015,16 +4049,19 @@ function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext){
 // INITIALIZATION
 // =====================================================
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize with current school year
+  // Initialize with current school year.
+  // ORDER MATTERS: populateWeekDropdowns() sets a valid default finish
+  // week, and populateCrossYearDropdown() must run before the DE/OP
+  // dropdowns are built, because those read #endWeek / #endWeekNext to
+  // decide how many weeks to offer.
   initializeYear(getCurrentSchoolYear());
   updateYearToggle();
   updateWeek1Partial();
   populateWeekDropdowns();
-  populateDeDropdowns();
-  populateOpDropdowns();
   populateCrossYearDropdown();
   populateNextYearCustomSkipDropdowns();
-  document.getElementById("endWeek").value = "46";
+  populateDeDropdowns();
+  populateOpDropdowns();
   displayCurrentDateAndWeek();
   populateGpFreshmanDropdown();
 
