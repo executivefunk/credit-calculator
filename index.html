@@ -411,7 +411,7 @@ select {
 
 <!-- FERPA-safe repeating footer (prints on every page, no student PII) -->
 <div class="print-running-footer" id="printRunningFooter">
-  <span id="printRunningFooterText">Graduation Plan Packet &mdash; printed </span><span id="printFooterDate"></span>
+  <span id="printRunningFooterText">NOT AN OFFICIAL SCHOOL DOCUMENT &mdash; planning tool only &middot; printed </span><span id="printFooterDate"></span>
 </div>
 
 <div class="container">
@@ -726,7 +726,7 @@ select {
       <button onclick="generatePlan('D')">&#x1F534; Open Plan D</button>
     </div>
     <div class="footer-disclaimer" id="footerDisclaimer">
-      <strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
+      <strong>Disclaimer:</strong> This is not an official school document. This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
     </div>
   </div>
 </div>
@@ -1133,8 +1133,8 @@ const translations = {
   "Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.": "Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos necesitas, luego usa ese n\u00famero en la calculadora.",
   "mainDisclaimerFull": "This calculator works for one school year, or two years combined if you extend your plan into next year.<br><br>Planning your full path to graduation? Use the Graduation Credit Planner above.<br><br>Talk with your teacher to decide how many credits to aim for, then use that number below.",
   "mainDisclaimerFull_ES": "Esta calculadora funciona para un a\u00f1o escolar, o dos a\u00f1os combinados si extiendes tu plan al pr\u00f3ximo a\u00f1o escolar.<br><br>\u00bfPlaneando tu camino completo hacia la graduaci\u00f3n? Usa el Planificador de Cr\u00e9ditos de Graduaci\u00f3n arriba.<br><br>Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos deber\u00edas completar y usa ese n\u00famero abajo.",
-  "footerDisclaimerFull": "<strong>Disclaimer:</strong> This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.",
-  "footerDisclaimerFull_ES": "<strong>Aviso:</strong> Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos totales y cu\u00e1ntas semanas tienes.<br>Si no est\u00e1s seguro, habla con tu maestro o consejero escolar para revisar tu plan.",
+  "footerDisclaimerFull": "<strong>Disclaimer:</strong> This is not an official school document. This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.",
+  "footerDisclaimerFull_ES": "<strong>Aviso:</strong> Este no es un documento oficial de la escuela. Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos totales y cu\u00e1ntas semanas tienes.<br>Si no est\u00e1s seguro, habla con tu maestro o consejero escolar para revisar tu plan.",
   "I have a dual-enrollment class": "Tengo una clase de doble inscripci\u00f3n",
   "Dual Enrollment Class 1": "Clase de Doble Inscripci\u00f3n 1",
   "Dual Enrollment Class 2": "Clase de Doble Inscripci\u00f3n 2",
@@ -3080,7 +3080,8 @@ function generatePlan(type) {
   '.print-chunk:first-of-type table.planner thead { display: table-header-group !important; }' +
   '.print-chunk ~ .print-chunk table.planner thead { display: none !important; } }' +
   '.notes { display: none !important; }' +
-  '@media print { @page { size: letter portrait; margin: 0.4in; } body { padding: 0 !important; }' +
+  '@media print { @page { size: letter portrait; margin: 0.4in 0.4in 0.65in 0.4in; } body { padding: 0 !important; }' +
+  '.unofficial-runfoot { display:block !important; position: fixed; bottom: 0.18in; left: 0.4in; right: 0.4in; text-align: center; font-size: 8pt; color: #888; border-top: 0.5px solid #ccc; padding-top: 4px; }' +
   '.topbar, h2 { page-break-before: avoid !important; break-before: avoid !important; page-break-after: avoid !important; break-after: avoid !important; }' +
   '.print-chunk:first-of-type, .print-chunk:first-of-type table.planner { break-before: auto !important; page-break-before: auto !important; margin-top: 0 !important; padding-top: 0 !important; }' +
   'table { line-height: 1.12; } tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }' +
@@ -3156,6 +3157,9 @@ function generatePlan(type) {
   '<h2 style="margin-bottom:2px;">Credit Tracker \u2013 Plan ' + type + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')</h2>' +
   '<p style="margin:0 0 2px; font-size:0.85em; color:#555;">(Credit completion is allowed during self-selected "0" credit weeks.)</p>' +
   '<p style="margin:0 0 10px; font-size:0.85em; color:#555;">Plan created on: ' + formatEmailDate() + '</p>' +
+  '<div class="unofficial-runfoot" style="display:none;">' + (isSpanish
+    ? 'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso ' + formatEmailDate()
+    : 'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed ' + formatEmailDate()) + '</div>' +
   tablesHtml +
   '<p class="notes" style="margin-top:10px; font-size:0.95em; color:#555;">Notes: Skip weeks are locked at 0.' + (isWeek1Partial ? ' Week 1 is a partial week (highlighted in red, starts at 0 credits) \u2014 you may optionally add bonus credits using +/\u2013.' : '') + ' Per-week limit is ' + maxPerWeek + '. The table won\'t let you exceed your total target credits (' + C + ').</p>' +
   '</body></html>';
@@ -3485,8 +3489,8 @@ function applyTranslations() {
     : 'Tip: For numbered pages, turn on &ldquo;Headers and footers&rdquo; in your browser&rsquo;s print dialog.';
   const printFooterTextEl = document.getElementById('printRunningFooterText');
   if (printFooterTextEl) printFooterTextEl.textContent = isSpanish
-    ? 'Paquete del Plan de Graduación — impreso '
-    : 'Graduation Plan Packet — printed ';
+    ? 'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso '
+    : 'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed ';
   const printNameLblEl = document.getElementById('printNameLabel');
   if (printNameLblEl) printNameLblEl.textContent = isSpanish ? 'Nombre del estudiante:' : 'Student name:';
   const printTitleSkipEl = document.getElementById('printTitleSkipWeeks');
