@@ -720,9 +720,9 @@ select {
       <div class="output" id="result"></div>
     </div>
     <div class="plan-buttons" id="planButtons" style="display: none;">
-      <button onclick="generatePlan('A')">&#x1F7E2; Open Plan A</button>
-      <button onclick="generatePlan('B')">&#x1F7E1; Open Plan B</button>
-      <button onclick="generatePlan('C')">&#x1F535; Open Plan C</button>
+      <button onclick="generatePlan('C')">&#x1F7E2; Open Plan A</button>
+      <button onclick="generatePlan('A')">&#x1F7E1; Open Plan B</button>
+      <button onclick="generatePlan('B')">&#x1F535; Open Plan C</button>
       <button onclick="generatePlan('D')">&#x1F534; Open Plan D</button>
     </div>
     <div class="footer-disclaimer" id="footerDisclaimer">
@@ -2539,7 +2539,7 @@ function calculateCredits() {
 
   const planAWeeks = Math.ceil(adjustedCredits / 2);
   let weeksOf3 = 0;
-  let planANote = "<li><strong>" + getText("Plan A") + ":</strong> " +
+  let planANote = "<li><strong>" + getText("Plan B") + ":</strong> " +
     getText("credits_per_week_for_weeks").replace("{x}", "2").replace("{y}", planAWeeks);
   const planAButton = document.querySelector('button[onclick="generatePlan(\'A\')"]');
 
@@ -2562,7 +2562,7 @@ function calculateCredits() {
       planAButton.title = "";
     } else {
       planAButton.disabled = true;
-      planAButton.title = "Disabled: Plan A no longer works with remaining weeks left.";
+      planAButton.title = "Disabled: Plan B no longer works with remaining weeks left.";
     }
   } else {
     planAButton.disabled = false;
@@ -2570,7 +2570,7 @@ function calculateCredits() {
   }
   planANote += "</li>";
 
-  let planBNote = "<li><strong>" + getText("Plan B") + ":</strong> " +
+  let planBNote = "<li><strong>" + getText("Plan C") + ":</strong> " +
     getText("credits_per_week_for_weeks").replace("{x}", "3").replace("{y}", fullWeeksAt3);
   if (remainder > 0) planBNote += " " + getText("plus_1_week_of_n").replace("{n}", remainder);
   planBNote += " - " + getText("weeks_total").replace("{x}", planBWeeks);
@@ -2598,7 +2598,7 @@ function calculateCredits() {
       ? 'Puedes tener 0 semana(s) de 1 cr\u00e9dito'
       : 'You can afford 0 week(s) at 1 credit';
   }
-  let planCNote = "<li><strong>" + getText("Plan C") + ":</strong> " + planCText + "</li>";
+  let planCNote = "<li><strong>" + getText("Plan A") + ":</strong> " + planCText + "</li>";
 
   // Dual Enrollment result markup
   function deRangeText(de) {
@@ -2675,7 +2675,7 @@ function calculateCredits() {
     bufferWarning +
     (startWeek <= 10 ? '<p><strong>' + getText("Strong Start Tip: Try completing 3 credits/week for the first 6 weeks. You can slow down later.") + '</strong></p>' : '') +
     '<hr><p><strong>' + getText("Workflow Options") + ':</strong></p><ul>' +
-    planANote + '<br>' + planBNote + '<br>' + planCNote + '<br>' + planDNote + '</ul>';
+    planCNote + '<br>' + planANote + '<br>' + planBNote + '<br>' + planDNote + '</ul>';
 
   document.getElementById("result").innerHTML = result;
 
@@ -2756,7 +2756,7 @@ function calculateCredits() {
 
   // Disable buttons as needed
   const planCButton = document.querySelector('button[onclick="generatePlan(\'C\')"]');
-  if (adjustedCredits > 2 * weeksRemaining) { planCButton.disabled = true; planCButton.title = "Disabled: Plan C needs 1\u20132 credits/week, which can't reach your total in time."; }
+  if (adjustedCredits > 2 * weeksRemaining) { planCButton.disabled = true; planCButton.title = "Disabled: Plan A needs 1\u20132 credits/week, which can't reach your total in time."; }
   else { planCButton.disabled = false; planCButton.title = ""; }
 
   const planBButton = document.querySelector('button[onclick="generatePlan(\'B\')"]');
@@ -2823,7 +2823,7 @@ function renderResult() {
     bufferWarning +
     (strongStart ? '<p><strong>' + getText("Strong Start Tip: Try completing 3 credits/week for the first 6 weeks. You can slow down later.") + '</strong></p>' : '') +
     '<hr><p><strong>' + getText("Workflow Options") + ':</strong></p><ul>' +
-    planANote + '<br>' + planBNote + '<br>' + planCNote + '<br>' + planDNote + '</ul>';
+    planCNote + '<br>' + planANote + '<br>' + planBNote + '<br>' + planDNote + '</ul>';
   document.getElementById("result").innerHTML = result;
 }
 
@@ -2831,6 +2831,9 @@ function renderResult() {
 // GENERATE PLAN (uses generated dateRanges)
 // =====================================================
 function generatePlan(type) {
+  // Display letters are remapped so the easiest plan reads as "Plan A":
+  // engine C (1-2/wk) -> A, engine A (2/wk) -> B, engine B (3/wk) -> C, D -> D.
+  const displayType = ({C:'A', A:'B', B:'C', D:'D'})[type] || type;
   const { totalCredits, adjustedCredits, startWeek, endWeek, skipWeeks, deData, opData, crossYearData, extMap } = storedPlan;
   const isCrossYear = crossYearData && crossYearData.active;
   const totalCurrent = schoolYearData.totalWeeks;
@@ -3024,7 +3027,7 @@ function generatePlan(type) {
 
   const yearLabel = schoolYearData.yearLabel;
 
-  const html = '<!doctype html><html><head><meta charset="utf-8"><title>Plan ' + type + ' \u2013 ' + yearLabel + ' Credit Tracker</title>' +
+  const html = '<!doctype html><html><head><meta charset="utf-8"><title>Plan ' + displayType + ' \u2013 ' + yearLabel + ' Credit Tracker</title>' +
   '<style>' +
   'body { font-family: Arial, sans-serif; padding: 16px; }' +
   'table { border-collapse: collapse; width: 100%; margin-top: 12px; table-layout: fixed; }' +
@@ -3154,7 +3157,7 @@ function generatePlan(type) {
   '</div>' +
   '<div class="tools"><button id="btnSpread1">Spread 1-credit weeks evenly</button><button id="btnFill2">Spread 2-credit weeks evenly</button><button id="btnClear">Clear all to 0</button></div>' +
   '<div class="print-tips"><strong>Print Tips:</strong> For best results, set your printer settings to:<ul><li>Margins: <strong>Minimum</strong></li><li>Enable <strong>Background Graphics</strong></li></ul></div></div>' +
-  '<h2 style="margin-bottom:2px;">Credit Tracker \u2013 Plan ' + type + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')</h2>' +
+  '<h2 style="margin-bottom:2px;">Credit Tracker \u2013 Plan ' + displayType + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')</h2>' +
   '<p style="margin:0 0 2px; font-size:0.85em; color:#555;">(Credit completion is allowed during self-selected "0" credit weeks.)</p>' +
   '<p style="margin:0 0 10px; font-size:0.85em; color:#555;">Plan created on: ' + formatEmailDate() + '</p>' +
   '<div class="unofficial-runfoot" style="display:none;">' + (isSpanish
