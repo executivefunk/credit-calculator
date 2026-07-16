@@ -2925,7 +2925,6 @@ function generatePlan(type) {
     return { ...w, credits: val };
   });
 
-  const printWin = window.open("", "_blank");
   const maxPerWeek = (type === 'D') ? 4 : 3;
 
   function formatDateForCell(str) {
@@ -2936,8 +2935,8 @@ function generatePlan(type) {
     return '<span class="date-core">' + str + '</span>';
   }
 
-  const isIOS = /iPhone|iPad|iPod/i.test(printWin.navigator.userAgent || '');
-  const isSmallViewport = printWin.matchMedia && printWin.matchMedia('(max-width: 900px)').matches;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const isSmallViewport = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
   const shouldSplit = isIOS || isSmallViewport;
   // When a DE or OP class is active, the popup topbar shows an extra
   // "You will be earning X credits from…" notice plus its "Show ..." toggle
@@ -3286,8 +3285,16 @@ function generatePlan(type) {
     '<' + 'script>' + behavior + '<' + '/script>' +
     '</body></html>');
 
-  printWin.document.write(fullHtml);
-  printWin.document.close();
+  // Blob URL instead of document.write into about:blank: gives the plan tab
+  // a real (memory-only, session-scoped) address, so if the browser discards
+  // the tab to save RAM, reopening/reloading it restores the plan instead of
+  // showing a blank page. Nothing is written to disk; the URL dies with the
+  // session. Keep the latest plan's URL alive; revoke the previous one.
+  const planBlob = new Blob([fullHtml], { type: "text/html" });
+  const planUrl = URL.createObjectURL(planBlob);
+  if (window.__lastPlanUrl) { try { URL.revokeObjectURL(window.__lastPlanUrl); } catch (e) {} }
+  window.__lastPlanUrl = planUrl;
+  window.open(planUrl, "_blank");
 }
 
 // =====================================================
