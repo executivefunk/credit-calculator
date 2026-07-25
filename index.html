@@ -203,6 +203,10 @@ select {
 .gp-plan-extended{border:2px solid #f9a825;background:#fffde7;}
 .gp-plan-traditional .gp-section-label{background:#2e7d32;}
 .gp-plan-extended .gp-section-label{background:#f57f17;}
+.gp-plan-de{border:2px solid #1565c0;background:#e3f2fd;}
+.gp-plan-de .gp-section-label{background:#1565c0;}
+.gp-plan-steady{border:2px solid #00695c;background:#e0f2f1;}
+.gp-plan-steady .gp-section-label{background:#00695c;}
 .gp-bm-hit{color:#2e7d32;font-size:0.85em;}
 .gp-bm-miss{color:#c62828;font-size:0.85em;}
 .gp-or-divider{text-align:center;margin:18px 0;position:relative;}
@@ -428,7 +432,7 @@ select {
       </span>
     </div>
     <div class="gp-body" id="gpBody" style="display:none;">
-      <p id="gpDescription" style="font-size:0.88em;color:#555;margin:0 0 12px;">Enter your freshman start year and credits remaining to see your year-by-year plan toward graduation (230 credits total).</p>
+      <p id="gpDescription" style="font-size:0.88em;color:#555;margin:0 0 12px;">Enter the school year you started 9th grade and your credits remaining to see your plan for each school year toward graduation (230 credits total).</p>
       <div class="gp-inputs">
         <div>
           <label for="gpFreshmanYear">I started 9th grade in:</label>
@@ -460,7 +464,7 @@ select {
     <div id="nextYearNotice" class="next-year-notice" style="display: none;"></div>
 
     <div id="mainDisclaimer" class="disclaimer" style="margin-bottom: 15px;">
-      This calculator works for one school year, or two years combined if you extend your plan into next year.
+      This calculator works for one school year, or two school years combined if you extend your plan into the next school year.
       <br><br>
       Planning your full path to graduation? Use the Graduation Credit Planner above.
       <br><br>
@@ -484,7 +488,7 @@ select {
         <p id="crossYearNote" style="font-size:0.82em;color:#555;margin-top:6px;"></p>
         <div id="currentYearSkipSlot" style="margin-top:12px;"></div>
         <div id="nextYearSkipBox" class="holiday-box" style="margin-top:12px;background:#dbe6f6;border-color:#b0c4de;">
-          <p id="nextYearSkipTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip — <span style="color:#b71c1c;">Next Year</span> (Optional):</p>
+          <p id="nextYearSkipTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip — <span style="color:#b71c1c;">Next School Year</span> (Optional):</p>
           <div class="holiday-option" id="nextYearWeek1PartialOption" style="display:none;">
             <input type="checkbox" id="nextYearSkipWeek1Partial" checked>
             <label for="nextYearSkipWeek1Partial" id="labelNextYearWeek1Partial"></label>
@@ -510,7 +514,7 @@ select {
     </div>
     <div id="currentYearSkipOriginalSlot"></div>
     <div class="holiday-box" id="currentYearSkipBox">
-      <p id="skipBoxTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip - <span style="color:#b71c1c;">Current Year</span> (Optional):</p>
+      <p id="skipBoxTitle" style="text-align:center;font-weight:bold;margin:0 0 12px;">Weeks You Plan to Skip - <span style="color:#b71c1c;">Current School Year</span> (Optional):</p>
       <div class="holiday-option" id="week1PartialOption" style="display:none;">
         <input type="checkbox" id="skipWeek1Partial" checked>
         <label for="skipWeek1Partial" id="labelWeek1Partial"></label>
@@ -550,7 +554,7 @@ select {
                 <input type="radio" name="de1Timing" value="currentYear" checked style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe1TimingCurrent">This school year only</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
-                <input type="radio" name="de1Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe1TimingCross">Starts this year, continues into next year</span>
+                <input type="radio" name="de1Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe1TimingCross">Starts this school year, continues into the next school year</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
                 <input type="radio" name="de1Timing" value="nextYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe1TimingNext">Takes place next school year</span>
@@ -591,7 +595,7 @@ select {
                 <input type="radio" name="de2Timing" value="currentYear" checked style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe2TimingCurrent">This school year only</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
-                <input type="radio" name="de2Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe2TimingCross">Starts this year, continues into next year</span>
+                <input type="radio" name="de2Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe2TimingCross">Starts this school year, continues into the next school year</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
                 <input type="radio" name="de2Timing" value="nextYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelDe2TimingNext">Takes place next school year</span>
@@ -637,7 +641,7 @@ select {
                 <input type="radio" name="op1Timing" value="currentYear" checked style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp1TimingCurrent">This school year only</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
-                <input type="radio" name="op1Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp1TimingCross">Starts this year, continues into next year</span>
+                <input type="radio" name="op1Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp1TimingCross">Starts this school year, continues into the next school year</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
                 <input type="radio" name="op1Timing" value="nextYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp1TimingNext">Takes place next school year</span>
@@ -678,7 +682,7 @@ select {
                 <input type="radio" name="op2Timing" value="currentYear" checked style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp2TimingCurrent">This school year only</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
-                <input type="radio" name="op2Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp2TimingCross">Starts this year, continues into next year</span>
+                <input type="radio" name="op2Timing" value="crossYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp2TimingCross">Starts this school year, continues into the next school year</span>
               </label>
               <label style="display:inline-flex;align-items:center;font-size:0.85em;cursor:pointer;margin:0;">
                 <input type="radio" name="op2Timing" value="nextYear" style="margin-right:6px;transform:scale(1.1);"> <span id="labelOp2TimingNext">Takes place next school year</span>
@@ -1105,9 +1109,9 @@ function getText(key) {
       "You can afford 0 week(s) at 1 credit",
       "Puedes tener 0 semana(s) de 1 cr\u00e9dito"
     ],
-    "Weeks You Plan to Skip - Current Year (Optional):": [
-      "Weeks You Plan to Skip - Current Year (Optional):",
-      "Semanas que Planeas Omitir - Año Actual (Opcional):"
+    "Weeks You Plan to Skip - Current School Year (Optional):": [
+      "Weeks You Plan to Skip - Current School Year (Optional):",
+      "Semanas que Planeas Omitir - Año Escolar Actual (Opcional):"
     ]
   };
   return isSpanish ? map[key]?.[1] ?? key : map[key]?.[0] ?? key;
@@ -1125,8 +1129,8 @@ const translations = {
   "Disclaimer:": "Aviso:",
   "This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.": "Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos y el n\u00famero de semanas. Si no est\u00e1s seguro, habla con tu maestro o consejero escolar.",
   "Talk with your teacher to decide how many credits to aim for, then use that number in the calculator.": "Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos necesitas, luego usa ese n\u00famero en la calculadora.",
-  "mainDisclaimerFull": "This calculator works for one school year, or two years combined if you extend your plan into next year.<br><br>Planning your full path to graduation? Use the Graduation Credit Planner above.<br><br>Talk with your teacher to decide how many credits to aim for, then use that number below.",
-  "mainDisclaimerFull_ES": "Esta calculadora funciona para un a\u00f1o escolar, o dos a\u00f1os combinados si extiendes tu plan al pr\u00f3ximo a\u00f1o escolar.<br><br>\u00bfPlaneando tu camino completo hacia la graduaci\u00f3n? Usa el Planificador de Cr\u00e9ditos de Graduaci\u00f3n arriba.<br><br>Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos deber\u00edas completar y usa ese n\u00famero abajo.",
+  "mainDisclaimerFull": "This calculator works for one school year, or two school years combined if you extend your plan into the next school year.<br><br>Planning your full path to graduation? Use the Graduation Credit Planner above.<br><br>Talk with your teacher to decide how many credits to aim for, then use that number below.",
+  "mainDisclaimerFull_ES": "Esta calculadora funciona para un a\u00f1o escolar, o dos a\u00f1os escolares combinados si extiendes tu plan al pr\u00f3ximo a\u00f1o escolar.<br><br>\u00bfPlaneando tu camino completo hacia la graduaci\u00f3n? Usa el Planificador de Cr\u00e9ditos de Graduaci\u00f3n arriba.<br><br>Habla con tu maestro para decidir cu\u00e1ntos cr\u00e9ditos deber\u00edas completar y usa ese n\u00famero abajo.",
   "footerDisclaimerFull": "<strong>Disclaimer:</strong> This is not an official school document. This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.",
   "footerDisclaimerFull_ES": "<strong>Aviso:</strong> Este no es un documento oficial de la escuela. Esta calculadora es una herramienta \u00fatil para planificar, pero es importante verificar tus cr\u00e9ditos totales y cu\u00e1ntas semanas tienes.<br>Si no est\u00e1s seguro, habla con tu maestro o consejero escolar para revisar tu plan.",
   "I have a dual-enrollment class": "Tengo una clase de doble inscripci\u00f3n",
@@ -1139,7 +1143,7 @@ const translations = {
   "Class name (optional)": "Nombre de la clase (opcional)",
   "When does this class take place?": "\u00bfCu\u00e1ndo toma lugar esta clase?",
   "This school year only": "Solo este a\u00f1o escolar",
-  "Starts this year, continues into next year": "Empieza este a\u00f1o, contin\u00faa el siguiente",
+  "Starts this school year, continues into the next school year": "Empieza este a\u00f1o, contin\u00faa el siguiente",
   "Takes place next school year": "Toma lugar el siguiente a\u00f1o escolar",
   "Start week (next school year)": "Semana de inicio (siguiente a\u00f1o escolar)",
   "End week (next school year)": "Semana final (siguiente a\u00f1o escolar)",
@@ -1147,7 +1151,7 @@ const translations = {
   "\u2715 Remove": "\u2715 Eliminar",
   "Extend my plan into the next school year": "Extender mi plan al siguiente a\u00f1o escolar",
   "Finish by week (next school year)": "Terminar en la semana (siguiente a\u00f1o escolar)",
-  "Weeks You Plan to Skip \u2014 Next Year (Optional):": "Semanas que planeas saltar \u2014 Pr\u00f3ximo a\u00f1o (Opcional):",
+  "Weeks You Plan to Skip \u2014 Next School Year (Optional):": "Semanas que planeas saltar \u2014 Pr\u00f3ximo a\u00f1o escolar (Opcional):",
   "Which week do you want to finish by?": "\u00bfEn qu\u00e9 semana quieres terminar?",
   "I will be attending an outside program": "Asistir\u00e9 a un programa externo",
   "Outside Program 1": "Programa Externo 1",
@@ -1159,8 +1163,8 @@ const translations = {
   "\ud83c\udf93 Graduation Credit Planner":"\ud83c\udf93 Planificador de Cr\u00e9ditos de Graduaci\u00f3n",
   "I started 9th grade in:":"Empec\u00e9 el 9\u00b0 grado en:",
   "Credits I still have remaining:":"Cr\u00e9ditos que a\u00fan me quedan:",
-  "gpDescriptionEN":"Enter your freshman start year and credits remaining to see your year-by-year plan toward graduation (230 credits total).",
-  "gpDescriptionES":"Ingresa tu a\u00f1o de inicio de 9\u00b0 grado y tus cr\u00e9ditos restantes para ver tu plan a\u00f1o por a\u00f1o hacia la graduaci\u00f3n (230 cr\u00e9ditos en total).",
+  "gpDescriptionEN":"Enter the school year you started 9th grade and your credits remaining to see your plan for each school year toward graduation (230 credits total).",
+  "gpDescriptionES":"Ingresa el a\u00f1o escolar en que empezaste el 9\u00b0 grado y tus cr\u00e9ditos restantes para ver tu plan por a\u00f1o escolar hacia la graduaci\u00f3n (230 cr\u00e9ditos en total).",
 };
 
 // =====================================================
@@ -1495,8 +1499,8 @@ function updateCrossYearUI() {
     if (endWeekSel) endWeekSel.disabled = true;
     const nextYearLabel = (activeStartYear + 1) + '–' + (activeStartYear + 2);
     if (noteEl) noteEl.textContent = isSpanish
-      ? 'Tu plan se extenderá desde el año actual hasta ' + nextYearLabel + '.'
-      : 'Your plan will extend from the current year into ' + nextYearLabel + '.';
+      ? 'Tu plan se extenderá desde el año escolar actual hasta el año escolar ' + nextYearLabel + '.'
+      : 'Your plan will extend from the current school year into the ' + nextYearLabel + ' school year.';
     updateNextYearWeek1Partial();
     populateNextYearCustomSkipDropdowns();
     updateNextYearSkipLabels();
@@ -1619,8 +1623,8 @@ function updateNextYearSkipLabels() {
   if (lblW) lblW.textContent = isSpanish ? "Saltar vacaciones - Invierno (Semanas 26–27)" : "Skip Winter Break (Weeks 26–27)";
   if (lblS) lblS.textContent = isSpanish ? "Saltar semana - Primavera (Semana 41)" : "Skip Spring Week (Week 41)";
   if (lblTitle) lblTitle.innerHTML = isSpanish
-    ? 'Semanas que planeas saltar — <span style="color:#b71c1c;">Próximo Año</span> (Opcional):'
-    : 'Weeks You Plan to Skip — <span style="color:#b71c1c;">Next Year</span> (Optional):';
+    ? 'Semanas que planeas saltar — <span style="color:#b71c1c;">Próximo Año Escolar</span> (Opcional):'
+    : 'Weeks You Plan to Skip — <span style="color:#b71c1c;">Next School Year</span> (Optional):';
 }
 
 // Build an extended date/week map spanning two school years
@@ -2602,8 +2606,8 @@ function calculateCredits() {
         : 'Next school year, Weeks ' + de.startWeekNext + '\u2013' + de.endWeekNext;
     } else if (de.crossYear) {
       return isSpanish
-        ? 'Semanas ' + de.startWeek + '\u2013' + de.endWeek + ', contin\u00faa al siguiente a\u00f1o hasta Semana ' + de.endWeekNext
-        : 'Weeks ' + de.startWeek + '\u2013' + de.endWeek + ', continues into next year through Week ' + de.endWeekNext;
+        ? 'Semanas ' + de.startWeek + '\u2013' + de.endWeek + ', contin\u00faa al siguiente a\u00f1o escolar hasta Semana ' +de.endWeekNext
+        : 'Weeks ' + de.startWeek + '\u2013' + de.endWeek + ', continues into the next school year through Week ' +de.endWeekNext;
     } else {
       return (isSpanish ? 'Semanas ' : 'Weeks ') + de.startWeek + '\u2013' + de.endWeek;
     }
@@ -2634,8 +2638,8 @@ function calculateCredits() {
         : 'Next school year, Weeks ' + op.startWeekNext + '–' + op.endWeekNext;
     } else if (op.crossYear) {
       return isSpanish
-        ? 'Semanas ' + op.startWeek + '–' + op.endWeek + ', continúa al siguiente año hasta Semana ' + op.endWeekNext
-        : 'Weeks ' + op.startWeek + '–' + op.endWeek + ', continues into next year through Week ' + op.endWeekNext;
+        ? 'Semanas ' + op.startWeek + '–' + op.endWeek + ', continúa al siguiente año escolar hasta Semana ' +op.endWeekNext
+        : 'Weeks ' + op.startWeek + '–' + op.endWeek + ', continues into the next school year through Week ' +op.endWeekNext;
     } else {
       return (isSpanish ? 'Semanas ' : 'Weeks ') + op.startWeek + '–' + op.endWeek;
     }
@@ -3119,7 +3123,7 @@ function generatePlan(type) {
     function popupDeRange(de) {
       if (de.nextYearOnly) return 'Next school year, Weeks ' + de.startWeekNext + '–' + de.endWeekNext;
       var r = 'Weeks ' + de.startWeek + '–' + de.endWeek;
-      if (de.crossYear) r += ', continues into next year through Week ' + de.endWeekNext;
+      if (de.crossYear) r += ', continues into the next school year through Week ' +de.endWeekNext;
       return r;
     }
     function popupDeLabel(de, num) { return de.className || ('Dual Enrollment Class ' + num); }
@@ -3138,7 +3142,7 @@ function generatePlan(type) {
     function popupOpRange(op) {
       if (op.nextYearOnly) return 'Next school year, Weeks ' + op.startWeekNext + '–' + op.endWeekNext;
       var r = 'Weeks ' + op.startWeek + '–' + op.endWeek;
-      if (op.crossYear) r += ', continues into next year through Week ' + op.endWeekNext;
+      if (op.crossYear) r += ', continues into the next school year through Week ' +op.endWeekNext;
       return r;
     }
     function popupOpLabel(op, num) { return op.programName || ('Outside Program ' + num); }
@@ -3406,7 +3410,7 @@ function applyTranslations() {
     var cur = document.getElementById("labelDe" + n + "TimingCurrent");
     if (cur) cur.textContent = isSpanish ? "Solo este año escolar" : "This school year only";
     var cross = document.getElementById("labelDe" + n + "TimingCross");
-    if (cross) cross.textContent = isSpanish ? "Empieza este año, continúa el siguiente" : "Starts this year, continues into next year";
+    if (cross) cross.textContent = isSpanish ? "Empieza este año escolar, continúa el siguiente año escolar" : "Starts this school year, continues into the next school year";
     var next = document.getElementById("labelDe" + n + "TimingNext");
     if (next) next.textContent = isSpanish ? "Toma lugar el siguiente año escolar" : "Takes place next school year";
     var sn = document.getElementById("labelDe" + n + "StartNext");
@@ -3424,7 +3428,7 @@ function applyTranslations() {
     var cur = document.getElementById("labelOp" + n + "TimingCurrent");
     if (cur) cur.textContent = isSpanish ? "Solo este año escolar" : "This school year only";
     var cross = document.getElementById("labelOp" + n + "TimingCross");
-    if (cross) cross.textContent = isSpanish ? "Empieza este año, continúa el siguiente" : "Starts this year, continues into next year";
+    if (cross) cross.textContent = isSpanish ? "Empieza este año escolar, continúa el siguiente año escolar" : "Starts this school year, continues into the next school year";
     var next = document.getElementById("labelOp" + n + "TimingNext");
     if (next) next.textContent = isSpanish ? "Toma lugar el siguiente año escolar" : "Takes place next school year";
     var sn = document.getElementById("labelOp" + n + "StartNext");
@@ -3448,8 +3452,8 @@ function applyTranslations() {
 
   const skipBoxTitleEl = document.getElementById("skipBoxTitle");
   if (skipBoxTitleEl) skipBoxTitleEl.innerHTML = isSpanish
-    ? 'Semanas que planeas saltar - <span style="color:#b71c1c;">Año Actual</span> (Opcional):'
-    : 'Weeks You Plan to Skip - <span style="color:#b71c1c;">Current Year</span> (Optional):';
+    ? 'Semanas que planeas saltar - <span style="color:#b71c1c;">Año Escolar Actual</span> (Opcional):'
+    : 'Weeks You Plan to Skip - <span style="color:#b71c1c;">Current School Year</span> (Optional):';
 
   // Update next year notice if visible
   const notice = document.getElementById("nextYearNotice");
@@ -3540,7 +3544,9 @@ function populateGpFreshmanDropdown(){
   const currentSY=getCurrentSchoolYear();
   const prev=sel.value;
   sel.innerHTML='<option value="">-- '+(isSpanish?'Seleccionar':'Select')+' --</option>';
-  for(let y=currentSY-3;y<=currentSY+1;y++){
+  // 4 years back covers 5th-year (credit recovery) students whose traditional
+  // 4-year window has already passed; rolls forward automatically each year.
+  for(let y=currentSY-4;y<=currentSY+1;y++){
     const opt=document.createElement('option');
     opt.value=y;
     opt.textContent=y+'–'+(y+1);
@@ -3764,13 +3770,13 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
     const bmIcon=bmMet?'✅':'❌';
     let yearName;
     if(p.isCur){
-      yearName=isSpanish?'Año '+p.hsYr+' (Resto del año)':'Year '+p.hsYr+' (Remainder)';
+      yearName=isSpanish?'Año '+p.hsYr+' (Resto del Año Escolar)':'Year '+p.hsYr+' (Remainder of School Year)';
     } else if(p.isPostGya){
       yearName=isSpanish?'Año '+p.hsYr+' (2do semestre, post-GYA)':'Year '+p.hsYr+' (2nd semester, post-GYA)';
     } else if(p.isGrad){
-      yearName=isSpanish?'Año '+p.hsYr+' — Graduación':'Year '+p.hsYr+' — Graduation Year';
+      yearName=isSpanish?'Año '+p.hsYr+' — Graduación':'Year '+p.hsYr+' — Graduation School Year';
     } else {
-      yearName=isSpanish?'Año '+p.hsYr+' (Año completo)':'Year '+p.hsYr+' (Full year)';
+      yearName=isSpanish?'Año '+p.hsYr+' (Año Escolar Completo)':'Year '+p.hsYr+' (Full School Year)';
     }
     let wNote;
     const wkStart=p.week1Skipped?2:1;
@@ -3800,7 +3806,9 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:7px;flex-wrap:wrap;gap:4px;">'
         +'<div class="gp-pace '+paceClass+'">'+paceIcon+' '+p.pace.toFixed(1)+' '+(isSpanish?'cr/semana':'cr/week')+'</div>'
-        +'<div class="'+bmClass+'">'+bmIcon+' '+(isSpanish?'Benchmark: ':'Benchmark: ')+p.bmTarget+'</div>'
+        // hideBm: 5th-year+ plans hide the (moot) intermediate 230 benchmark —
+        // only the final graduation row keeps its ✅ 230 confirmation.
+        +(p.hideBm?'':'<div class="'+bmClass+'">'+bmIcon+' '+(isSpanish?'Benchmark: ':'Benchmark: ')+p.bmTarget+'</div>')
       +'</div>';
     if(p.isCur&&p.skippedWeek){
       html+='<div style="margin-top:6px;padding:5px 8px;background:rgba(255,248,220,0.9);border-radius:5px;font-size:0.85em;color:#7a6000;">'
@@ -3855,6 +3863,117 @@ function gpGetGyaCohorts(today,freshmanYear){
   }
   return cohorts.slice(0,4);
 }
+// Format an ISO date (yyyy-mm-dd) as a human month/day/year label
+function gpMonthDay(iso,es){
+  const mEN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const mES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const p=iso.split('-').map(Number);
+  return es?(p[2]+' de '+mES[p[1]-1]+' de '+p[0]):(mEN[p[1]-1]+' '+p[2]+', '+p[0]);
+}
+// Walk school years at a constant 2 cr/week from the current position and
+// return the year-by-year segments until all remaining credits are done.
+// Each segment: {sy, hsYr, yearLabel, syd, wkStart, credits, weeksUsed,
+// finishWk, isCur}. The last segment's finishWk is the completion week.
+function gpSteadyPeriods(freshmanYear,currentSY,curWeek,currentSyData,credRemaining){
+  const PACE=2;
+  const per=[];
+  let rem=credRemaining,sy=currentSY,guard=0;
+  while(rem>0&&guard<8){
+    const syd=sy===currentSY?currentSyData:generateSchoolYear(sy);
+    const wkStart=sy===currentSY?curWeek:(syd.week1Partial?2:1);
+    const avail=syd.totalWeeks-wkStart+1;
+    if(avail>0){
+      const credits=Math.min(rem,avail*PACE);
+      const weeksUsed=Math.ceil(credits/PACE);
+      per.push({sy,hsYr:sy-freshmanYear+1,yearLabel:sy+'–'+(sy+1),syd,wkStart,
+        credits,weeksUsed,finishWk:wkStart+weeksUsed-1,isCur:sy===currentSY});
+      rem-=credits;
+    }
+    sy++;guard++;
+  }
+  return per;
+}
+// Render the "Steady Pace — 2 cr/week" section: year rows plus a completion
+// callout that says exactly where a constant 2 cr/week lands the student —
+// before the Week 46 ceremony deadline, after it but still within the class
+// year, or into a short reduced extra year (e.g., done by December).
+function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syData,credEarned,credRemaining,classOf){
+  const steady=gpSteadyPeriods(freshmanYear,currentSY,curWeek,syData,credRemaining);
+  if(steady.length===0)return '';
+  const lastS=steady[steady.length-1];
+  const finishIso=lastS.syd.isoStarts[Math.min(lastS.finishWk,lastS.syd.totalWeeks)];
+  const finishDate=gpMonthDay(finishIso,isSpanish);
+  let h='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+  h+='<div class="gp-plan-section gp-plan-steady">';
+  h+='<div class="gp-section-label">'
+    +(isSpanish?'Opción '+optNum+': Ritmo Constante — 2 créditos/semana':'Option '+optNum+': Steady Pace — 2 credits/week')
+    +'</div>';
+  h+='<p style="font-size:0.85em;color:#37474f;margin:6px 0 10px;text-align:center;line-height:1.4;">'
+    +(isSpanish
+      ?'Si completas 2 créditos cada semana de forma constante, así avanzarías:'
+      :'If you complete 2 credits consistently every week, here’s how far you’d get:')
+    +'</p>';
+  let cum=credEarned;
+  steady.forEach(function(p,i){
+    cum+=p.credits;
+    const isLast=i===steady.length-1;
+    const pace=p.weeksUsed>0?p.credits/p.weeksUsed:0;
+    const wkNote=(isSpanish?'Semanas ':'Weeks ')+p.wkStart+'–'+p.finishWk+(isLast?(isSpanish?' → ¡terminado!':' → done!'):'');
+    const nm=p.isCur
+      ?(isSpanish?'Año '+p.hsYr+' (Resto del Año Escolar)':'Year '+p.hsYr+' (Remainder of School Year)')
+      :(isSpanish?'Año '+p.hsYr:'Year '+p.hsYr);
+    h+='<div class="gp-year-row'+(p.isCur?' gp-current':'')+(isLast?' gp-grad-year':'')+'">'
+      +'<div class="gp-year-top">'
+        +'<div class="gp-year-left">'
+          +'<div class="gp-year-label">'+nm+'</div>'
+          +'<div class="gp-year-sub">'+p.yearLabel+' · '+wkNote+'</div>'
+        +'</div>'
+        +'<div class="gp-year-credits">'
+          +'<strong>'+p.credits+' '+(isSpanish?'créditos':'credits')+'</strong>'
+          +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+cum+' / 230</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="gp-pace gp-pace-green" style="margin-top:7px;">✅ '+pace.toFixed(1)+' '+(isSpanish?'cr/semana':'cr/week')+'</div>';
+    if(p.isCur&&p.credits>0){
+      h+='<button class="gp-use-btn" onclick="useCreditsInCalculator('+p.credits+','+curWeek+','+syData.totalWeeks+',false,0)">'
+        +(isSpanish?'Click para enviar '+p.credits+' créditos a calculadora — Año '+p.hsYr:'Click to send '+p.credits+' credits to calculator — Yr '+p.hsYr)
+        +'</button>';
+    }
+    h+='</div>';
+    if(i===1&&steady[0].isCur){
+      const comb=steady[0].credits+steady[1].credits;
+      const nextEnd=Math.min(steady[1].finishWk,steady[1].syd.totalWeeks);
+      h+='<div style="margin:2px 0 8px;">'
+        +'<button class="gp-use-btn" onclick="useCreditsInCalculator('+comb+','+curWeek+','+syData.totalWeeks+',true,'+nextEnd+')">'
+        +(isSpanish
+          ?'Click para enviar '+comb+' créditos a calculadora — Año '+steady[0].hsYr+' + '+steady[1].hsYr
+          :'Click to send '+comb+' credits to calculator — Yr '+steady[0].hsYr+' + '+steady[1].hsYr)
+        +'</button></div>';
+    }
+  });
+  // Completion callout — the whole point of this section
+  let callout,calloutStyle;
+  if(lastS.sy<gradSY4||(lastS.sy===gradSY4&&lastS.finishWk<=46)){
+    calloutStyle='background:#e8f5e9;border:1px solid #81c784;';
+    callout='🎓 '+(isSpanish
+      ?'Terminarías alrededor de la semana del '+finishDate+' — ¡antes de la fecha límite de la Semana 46 para la ceremonia de graduación!'
+      :'You’d finish around the week of '+finishDate+' — before the Week 46 graduation-ceremony deadline!');
+  } else if(lastS.sy===gradSY4){
+    calloutStyle='background:#fff8e1;border:1px solid #ffcc02;';
+    callout='🎓 '+(isSpanish
+      ?'Terminarías todos tus créditos alrededor de la semana del '+finishDate+' — todavía dentro del año escolar '+lastS.yearLabel+' (Clase de '+classOf+'), pero DESPUÉS de la fecha límite de la Semana 46 para la ceremonia de graduación. Habla con tu maestro/a sobre lo que esto significa para la ceremonia.'
+      :'You’d finish all your credits around the week of '+finishDate+' — still within the '+lastS.yearLabel+' school year (Class of '+classOf+'), but AFTER the Week 46 graduation-ceremony deadline. Talk with your teacher about what this means for the ceremony.');
+  } else {
+    const inSem1=lastS.finishWk<=30;
+    calloutStyle='background:#fff8e1;border:1px solid #ffcc02;';
+    callout='🗓️ '+(isSpanish
+      ?'Trabajarías hasta '+(inSem1?'el primer semestre del ':'el ')+'año escolar '+lastS.yearLabel+', terminando alrededor de la semana del '+finishDate+'. El Año '+lastS.hsYr+' sería un año escolar corto y reducido — solo '+lastS.credits+' créditos.'
+      :'You’d work into '+(inSem1?'the first semester of ':'')+'the '+lastS.yearLabel+' school year, finishing around the week of '+finishDate+'. Year '+lastS.hsYr+' would be a short, reduced school year — just '+lastS.credits+' credits.');
+  }
+  h+='<div class="gp-int-card" style="'+calloutStyle+'font-size:0.9em;line-height:1.45;">'+callout+'</div>';
+  h+='</div>';
+  return h;
+}
 function calcGradPlan(){
   const freshmanYear=parseInt(document.getElementById('gpFreshmanYear')?.value);
   const credRaw=document.getElementById('gpCreditsRemaining')?.value;
@@ -3869,7 +3988,7 @@ function calcGradPlan(){
   const hsYear=currentSY-freshmanYear+1;
   // Validation
   if(hsYear<1||hsYear>8){
-    resultEl.innerHTML='<p style="color:#c62828;font-size:0.9em;">'+(isSpanish?'Por favor selecciona un año de inicio válido.':'Please select a valid freshman start year.')+'</p>';
+    resultEl.innerHTML='<p style="color:#c62828;font-size:0.9em;">'+(isSpanish?'Por favor selecciona un año escolar de inicio válido.':'Please select a valid school year for starting 9th grade.')+'</p>';
     return;
   }
   if(credRemaining<=0){
@@ -3878,6 +3997,159 @@ function calcGradPlan(){
   }
   if(credRemaining>TOTAL){
     resultEl.innerHTML='<p style="color:#c62828;font-size:0.9em;">'+(isSpanish?'Ingresa un número entre 1 y 230.':'Please enter a number between 1 and 230.')+'</p>';
+    return;
+  }
+  // ── 5th-year+ students: traditional 4-year window already passed ─
+  // (freshmanYear+3 < currentSY, i.e. hsYear >= 5.) The "Class of
+  // classOf — credits won't fit" framing would be confusing (that class
+  // already graduated), and GYA's age window (16–18) makes it a poor fit
+  // for these older students. Instead:
+  //   Option 1 — realistic front-loaded plan: fit as many credits as
+  //     possible this year (2 cr/week max), carry the rest into following
+  //     years, adding years until everything fits.
+  //   Option 2 — same plan with one dual-enrollment class (+10 credits),
+  //     which can lighten the load or even finish a year earlier.
+  if(freshmanYear+3<currentSY){
+    // Fit helper: extend the graduation year until all credits fit at the
+    // 2 cr/week sustainable cap (gpFrontLoad fills earliest years first).
+    const gpFit=function(earned,remaining){
+      for(let g=currentSY;g<=currentSY+3;g++){
+        const per=gpBuildPeriods(freshmanYear,g,currentSY,curWeek,syData,skippedWeek);
+        const lo=gpFrontLoad(per,earned,remaining);
+        if(lo===0){
+          // Never show a 0-credit graduation year (happens when everything
+          // fits in the earlier full-length years but not by the earlier
+          // year's Week-46 ceremony deadline): shift one class's worth of
+          // credits into the graduation year so the plan reads sensibly.
+          if(per.length>1){
+            const last=per[per.length-1];
+            const prev=per[per.length-2];
+            if(last.credits===0&&prev.credits>0){
+              const shift=Math.min(10,prev.credits);
+              prev.credits-=shift;prev.cumEnd-=shift;
+              prev.pace=prev.weeks>0?prev.credits/prev.weeks:0;
+              last.credits+=shift;
+              last.pace=last.weeks>0?last.credits/last.weeks:0;
+            }
+          }
+          // Hide the (moot) 230 benchmark on all but the final grad row
+          per.forEach(function(p,i){p.hideBm=i<per.length-1;});
+          return{periods:per,gradSY:g};
+        }
+      }
+      return null;
+    };
+    const base=gpFit(credEarned,credRemaining);
+    let htmlX='';
+    if(!base){
+      // Safety net only — 229 credits always fit within +3 years at 2/wk.
+      htmlX+='<div class="gp-int-card" style="background:#fff8e1;border:1px solid #ffcc02;font-size:0.95em;line-height:1.45;">'
+        +'🗓️ <strong>'+(isSpanish?'Habla con tu consejero/a escolar':'Talk with your school counselor')+'</strong><br>'
+        +(isSpanish
+          ?'Para terminar necesitarás un plan personalizado. Agenda una cita pronto con tu consejero/a escolar para diseñar juntos el mejor camino para ti.'
+          :'Finishing will need a customized plan with extra support. Set up an appointment soon with your school counselor so you can design the best path together.')
+        +'</div>';
+      resultEl.innerHTML=htmlX;
+      return;
+    }
+    const gradClass=base.gradSY+1;
+    const multiYear=base.gradSY>currentSY;
+    const _curPX=base.periods.find(p=>p.isCur);
+    const _nxtPX=base.periods.find(p=>!p.isCur);
+    const combinedX=(_curPX&&_nxtPX)?_curPX.credits+_nxtPX.credits:0;
+    const calcConfigX={
+      startWk:curWeek,
+      curEndWk:_curPX?(_curPX.isGrad?46:syData.totalWeeks):syData.totalWeeks,
+      nextEndWk:_nxtPX?(_nxtPX.isGrad?46:generateSchoolYear(_nxtPX.sy).totalWeeks):46
+    };
+    // Summary bar
+    htmlX+='<div class="gp-header-bar">'
+      +'<span><strong>'+(isSpanish?'Clase de ':'Class of ')+'</strong>'+gradClass+'</span>'
+      +'<span><strong>'+(isSpanish?'Créditos obtenidos: ':'Credits earned: ')+'</strong>'+credEarned+' / '+TOTAL+'</span>'
+      +'<span><strong>'+(isSpanish?'Año de preparatoria: ':'High School Year: ')+'</strong>'+hsYear+'</span>'
+      +'</div>';
+    // ── Option 1: realistic front-loaded plan ────────────────────
+    htmlX+='<div class="gp-plan-section gp-plan-extended">';
+    htmlX+='<div class="gp-section-label">'
+      +(isSpanish?'Opción 1: Tu Plan de Graduación — Clase de '+gradClass:'Option 1: Your Graduation Plan — Class of '+gradClass)
+      +'</div>';
+    htmlX+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
+      +(isSpanish
+        ?(multiYear
+          ?'La ventana tradicional de 4 años escolares (Clase de '+classOf+') ya pasó. Este plan completa el máximo posible este año escolar (máx. 2 créditos/semana) y pasa el resto al siguiente año escolar.'
+          :'La ventana tradicional de 4 años escolares (Clase de '+classOf+') ya pasó. Este plan termina tus créditos restantes este año escolar (máx. 2 créditos/semana).')
+        :(multiYear
+          ?'The traditional window of 4 school years (Class of '+classOf+') has passed. This plan fits as many credits as possible this school year (2 credits/week max) and carries the rest into the following school year'+(base.gradSY>currentSY+1?'s':'')+'.'
+          :'The traditional window of 4 school years (Class of '+classOf+') has passed. This plan finishes your remaining credits this school year (2 credits/week max).'))
+      +'</p>';
+    htmlX+=gpRenderRows(base.periods,true,combinedX,calcConfigX);
+    if(multiYear){
+      // Audience-neutral wording: this tool is often driven by a counselor
+      // or teacher sitting with the student, so avoid "go see your
+      // counselor" referral language — a progress-review reminder instead.
+      htmlX+='<div class="gp-int-card" style="background:#fff8e1;border:1px solid #ffcc02;font-size:0.88em;line-height:1.4;">'
+        +'🗓️ '+(isSpanish
+          ?'Este plan abarca más de un año escolar — revisen el progreso cada semestre para mantenerse al día.'
+          :'This plan spans more than one school year — review progress together each semester to stay on track.')
+        +'</div>';
+    }
+    htmlX+='</div>';
+    // ── Option 2: with one dual-enrollment class (+10 credits) ───
+    if(credRemaining>10){
+      const deFit=gpFit(credEarned+10,credRemaining-10);
+      if(deFit){
+        const deGradClass=deFit.gradSY+1;
+        const _curPD=deFit.periods.find(p=>p.isCur);
+        const _nxtPD=deFit.periods.find(p=>!p.isCur);
+        const combinedD=(_curPD&&_nxtPD)?_curPD.credits+_nxtPD.credits:0;
+        const calcConfigD={
+          startWk:curWeek,
+          curEndWk:_curPD?(_curPD.isGrad?46:syData.totalWeeks):syData.totalWeeks,
+          nextEndWk:_nxtPD?(_nxtPD.isGrad?46:generateSchoolYear(_nxtPD.sy).totalWeeks):46
+        };
+        htmlX+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+        htmlX+='<div class="gp-plan-section gp-plan-de">';
+        htmlX+='<div class="gp-section-label">'
+          +(isSpanish?'Opción 2: Con Inscripción Doble — Clase de '+deGradClass:'Option 2: With Dual Enrollment — Class of '+deGradClass)
+          +'</div>';
+        htmlX+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
+          +(isSpanish
+            ?'Una clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades una:'
+            :'One dual-enrollment class at the community college typically earns 10 high school credits. Here’s your plan if you add one:')
+          +'</p>';
+        if(deFit.gradSY<base.gradSY){
+          htmlX+='<p style="color:#1565c0;font-weight:bold;margin:0 0 8px;font-size:0.9em;text-align:center;line-height:1.3;">🎉 '
+            +(isSpanish
+              ?'¡Podrías graduarte un año escolar antes — Clase de '+deGradClass+'!'
+              :'You could graduate a whole school year earlier — Class of '+deGradClass+'!')
+            +'</p>';
+        }
+        // Dual-enrollment credit row (blue, mirrors the GYA-slot style)
+        htmlX+='<div class="gp-year-row" style="background:#e3f2fd;border:2px solid #64b5f6;">'
+          +'<div class="gp-year-top">'
+            +'<div class="gp-year-left">'
+              +'<div class="gp-year-label">📚 '+(isSpanish?'Clase de Inscripción Doble':'Dual Enrollment Class')+'</div>'
+              +'<div class="gp-year-sub">'+(isSpanish?'Habla con tu maestro/a para inscribirte':'Talk with your teacher about enrolling')+'</div>'
+            +'</div>'
+            +'<div class="gp-year-credits">'
+              +'<strong style="color:#1565c0;">+10 '+(isSpanish?'créditos':'credits')+'</strong>'
+              +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+(credEarned+10)+' / 230</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>';
+        htmlX+=gpRenderRows(deFit.periods,true,combinedD,calcConfigD);
+        htmlX+='</div>';
+      }
+    } else {
+      // ≤10 credits left: a single DE class alone could cover everything
+      htmlX+='<div class="gp-int-card gp-int-de" style="font-size:0.9em;margin-top:10px;">'
+        +'📚 <strong>'+(isSpanish?'Inscripción Doble':'Dual Enrollment')+'</strong><br>'
+        +(isSpanish
+          ?'Una sola clase de inscripción doble (≈10 créditos) podría cubrir todos tus créditos restantes. Habla con tu maestro/a sobre esta opción.'
+          :'A single dual-enrollment class (≈10 credits) could cover all your remaining credits. Talk with your teacher about this option.')
+        +'</div>';
+    }
+    resultEl.innerHTML=htmlX;
     return;
   }
   // ── Standard 4-year front-loaded plan ──────────────────────────
@@ -3907,7 +4179,7 @@ function calcGradPlan(){
   html+='<div class="gp-header-bar">'
     +'<span><strong>'+(isSpanish?'Clase de ':'Class of ')+'</strong>'+classOf+'</span>'
     +'<span><strong>'+(isSpanish?'Créditos obtenidos: ':'Credits earned: ')+'</strong>'+credEarned+' / '+TOTAL+'</span>'
-    +'<span><strong>'+(isSpanish?'Año actual: ':'Current Year: ')+'</strong>'+(isSpanish?'Año ':'Year ')+hsYear+'</span>'
+    +'<span><strong>'+(isSpanish?'Año de preparatoria: ':'High School Year: ')+'</strong>'+hsYear+'</span>'
     +'</div>';
   // Compute combined credits (current year + next year) for each plan
   const _curP4=periods4.find(p=>p.isCur);
@@ -3949,8 +4221,17 @@ function calcGradPlan(){
     html+=gpRenderRows(periods4,true,combined4,calcConfig4);
   }
   html+='</div>';
-  // Sections 2 & 3 appear when benchmarks are missed or credits won't fit in 4 years
+  // Alternative sections appear when benchmarks are missed or credits won't fit in 4 years
+  let altNum=2; // dynamic option numbering for the alternative sections
   if(hasHighPace){
+    // Steady-pace projection: only when Option 1 truly can't fit — shows
+    // exactly where a constant 2 cr/week lands (before the ceremony
+    // deadline, after it but within the class year, or a short reduced
+    // extra year, e.g. done by December).
+    if(opt1WontFit){
+      const steadyHtml=gpRenderSteadySection(altNum,freshmanYear,gradSY4,currentSY,curWeek,syData,credEarned,credRemaining,classOf);
+      if(steadyHtml){html+=steadyHtml;altNum++;}
+    }
     // -Or- divider
     html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
     // Section 2 — Y5 lighter option.
@@ -3962,7 +4243,7 @@ function calcGradPlan(){
     const opt2NeedsCounselor = maxPace5 > 2.0;
     html+='<div class="gp-plan-section gp-plan-extended">';
     html+='<div class="gp-section-label">'
-      +(isSpanish?'Opción 2: Añadir un Año — Clase de '+(classOf+1):'Option 2: Add a Year — Class of '+(classOf+1))
+      +(isSpanish?'Opción '+altNum+': Añadir un Año Escolar — Clase de '+(classOf+1):'Option '+altNum+': Add a School Year — Class of '+(classOf+1))
       +'</div>';
     if(opt2NeedsCounselor){
       html+='<div class="gp-int-card" style="background:#fff8e1;border:1px solid #ffcc02;font-size:0.95em;line-height:1.45;">'
@@ -3981,12 +4262,16 @@ function calcGradPlan(){
     // still leaves the student above a sustainable pace. In either case
     // showing GYA would mislead the student into thinking it solves the
     // problem when it doesn't.
-    const gyaWorks = gyaEligible && leftoverGya===0 && maxPaceGya<=2.0;
+    // periods4gya must actually contain a GYA slot: with an empty or
+    // slot-less period list, Math.max(...[]) is -Infinity and the pace
+    // check would pass vacuously, rendering an empty (misleading) card.
+    const gyaWorks = gyaEligible && leftoverGya===0 && maxPaceGya<=2.0
+      && periods4gya.some(p=>p.isGyaSlot);
     if(gyaWorks){
       html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
       html+='<div class="gp-int-card gp-int-gya" style="font-size:0.95em;">';
       html+='<div style="text-align:center;"><strong style="font-size:1.05em;">'
-        +(isSpanish?'Opción 3: Grizzly Youth Academy (GYA)':'Option 3: Grizzly Youth Academy (GYA)')+'</strong></div>';
+        +(isSpanish?'Opción '+(altNum+1)+': Grizzly Youth Academy (GYA)':'Option '+(altNum+1)+': Grizzly Youth Academy (GYA)')+'</strong></div>';
       html+='<p style="margin:5px 0 8px;">'
         +(isSpanish
           ?'GYA es un programa de un semestre que otorga hasta 60 créditos (una sola vez, para estudiantes de 16–18 años). Los cohortes comienzan en julio y en enero cada año escolar.'
