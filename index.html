@@ -3921,10 +3921,19 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
     cum+=p.credits;
     const isLast=i===steady.length-1;
     const pace=p.weeksUsed>0?p.credits/p.weeksUsed:0;
-    const wkNote=(isSpanish?'Semanas ':'Weeks ')+p.wkStart+'–'+p.finishWk+(isLast?(isSpanish?' → ¡terminado!':' → done!'):'');
-    const nm=p.isCur
-      ?(isSpanish?'Año '+p.hsYr+' (Resto del Año Escolar)':'Year '+p.hsYr+' (Remainder of School Year)')
-      :(isSpanish?'Año '+p.hsYr:'Year '+p.hsYr);
+    const wkNote=(isSpanish?'Semanas ':'Weeks ')+p.wkStart+'–'+p.finishWk+(isLast?(isSpanish?' → ¡graduación!':' → graduation!'):'');
+    // Naming convention: "Graduation School Year" = the school year the
+    // student completes their final credit (graduation day), whenever that
+    // lands. "Graduation Ceremony School Year" (in the Week-46-capped plans
+    // rendered by gpRenderRows) = planning for ceremony participation.
+    let nm;
+    if(isLast){
+      nm=isSpanish?'Año '+p.hsYr+' — Año Escolar de Graduación':'Year '+p.hsYr+' — Graduation School Year';
+    } else if(p.isCur){
+      nm=isSpanish?'Año '+p.hsYr+' (Resto del Año Escolar)':'Year '+p.hsYr+' (Remainder of School Year)';
+    } else {
+      nm=isSpanish?'Año '+p.hsYr:'Year '+p.hsYr;
+    }
     h+='<div class="gp-year-row'+(p.isCur?' gp-current':'')+(isLast?' gp-grad-year':'')+'">'
       +'<div class="gp-year-top">'
         +'<div class="gp-year-left">'
@@ -3959,19 +3968,19 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
   if(lastS.sy<gradSY4||(lastS.sy===gradSY4&&lastS.finishWk<=46)){
     calloutStyle='background:#e8f5e9;border:1px solid #81c784;';
     callout='🎓 '+(isSpanish
-      ?'Terminarías alrededor de la semana del '+finishDate+' — ¡antes de la fecha límite de la Semana 46 para la ceremonia de graduación!'
-      :'You’d finish around the week of '+finishDate+' — before the Week 46 graduation-ceremony deadline!');
+      ?'Te graduarías (completarías tu último crédito) alrededor de la semana del '+finishDate+' — ¡a tiempo para la fecha límite de la Semana 46 de la ceremonia de graduación!'
+      :'You’d graduate (complete your final credit) around the week of '+finishDate+' — in time for the Week 46 graduation-ceremony deadline!');
   } else if(lastS.sy===gradSY4){
     calloutStyle='background:#fff8e1;border:1px solid #ffcc02;';
     callout='🎓 '+(isSpanish
-      ?'Terminarías todos tus créditos alrededor de la semana del '+finishDate+' — todavía dentro del año escolar '+lastS.yearLabel+' (Clase de '+classOf+'), pero DESPUÉS de la fecha límite de la Semana 46 para la ceremonia de graduación. Habla con tu maestro/a sobre lo que esto significa para la ceremonia.'
-      :'You’d finish all your credits around the week of '+finishDate+' — still within the '+lastS.yearLabel+' school year (Class of '+classOf+'), but AFTER the Week 46 graduation-ceremony deadline. Talk with your teacher about what this means for the ceremony.');
+      ?'Te graduarías (completarías tu último crédito) alrededor de la semana del '+finishDate+' — todavía dentro del año escolar '+lastS.yearLabel+' (Clase de '+classOf+'), pero DESPUÉS de la fecha límite de la Semana 46 para la ceremonia de graduación. Habla con tu maestro/a sobre lo que esto significa para la ceremonia.'
+      :'You’d graduate (complete your final credit) around the week of '+finishDate+' — still within the '+lastS.yearLabel+' school year (Class of '+classOf+'), but AFTER the Week 46 graduation-ceremony deadline. Talk with your teacher about what this means for the ceremony.');
   } else {
     const inSem1=lastS.finishWk<=30;
     calloutStyle='background:#fff8e1;border:1px solid #ffcc02;';
     callout='🗓️ '+(isSpanish
-      ?'Trabajarías hasta '+(inSem1?'el primer semestre del ':'el ')+'año escolar '+lastS.yearLabel+', terminando alrededor de la semana del '+finishDate+'. El Año '+lastS.hsYr+' sería un año escolar corto y reducido — solo '+lastS.credits+' créditos.'
-      :'You’d work into '+(inSem1?'the first semester of ':'')+'the '+lastS.yearLabel+' school year, finishing around the week of '+finishDate+'. Year '+lastS.hsYr+' would be a short, reduced school year — just '+lastS.credits+' credits.');
+      ?'Trabajarías hasta '+(inSem1?'el primer semestre del ':'el ')+'año escolar '+lastS.yearLabel+', graduándote (completando tu último crédito) alrededor de la semana del '+finishDate+'. El Año '+lastS.hsYr+' sería un año escolar corto y reducido — solo '+lastS.credits+' créditos.'
+      :'You’d work into '+(inSem1?'the first semester of ':'')+'the '+lastS.yearLabel+' school year, graduating (completing your final credit) around the week of '+finishDate+'. Year '+lastS.hsYr+' would be a short, reduced school year — just '+lastS.credits+' credits.');
   }
   h+='<div class="gp-int-card" style="'+calloutStyle+'font-size:0.9em;line-height:1.45;">'+callout+'</div>';
   h+='</div>';
