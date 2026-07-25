@@ -3774,7 +3774,10 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
     } else if(p.isPostGya){
       yearName=isSpanish?'Año '+p.hsYr+' (2do semestre, post-GYA)':'Year '+p.hsYr+' (2nd semester, post-GYA)';
     } else if(p.isGrad){
-      yearName=isSpanish?'Año '+p.hsYr+' — Graduación':'Year '+p.hsYr+' — Graduation School Year';
+      // "Ceremony" is deliberate: these rows are capped at Week 46, the
+      // graduation-ceremony credit deadline — unlike the Steady Pace rows,
+      // which may finish after Week 46 within the same school year.
+      yearName=isSpanish?'Año '+p.hsYr+' — Año Escolar de la Ceremonia de Graduación':'Year '+p.hsYr+' — Graduation Ceremony School Year';
     } else {
       yearName=isSpanish?'Año '+p.hsYr+' (Año Escolar Completo)':'Year '+p.hsYr+' (Full School Year)';
     }
