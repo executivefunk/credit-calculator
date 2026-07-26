@@ -1928,7 +1928,10 @@ function resetDualEnrollment() {
   const class2 = document.getElementById("deClass2Box");
   if (class2) class2.classList.remove("visible");
   const addBtn = document.getElementById("addDE2Btn");
-  if (addBtn) addBtn.style.display = "none";
+  // Restore (not hide) the add-second-class button on reset — hiding it here
+  // left users unable to add a second DE class after a reset.
+  if (addBtn) addBtn.style.display = "block";
+  if (typeof removeDeAutoNote === 'function') removeDeAutoNote();
   ["de1Credits", "de2Credits"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = "";
@@ -3862,19 +3865,26 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
         +'</div>';
     }
     if(showUseBtn&&p.isCur&&p.credits>0){
-      html+='<button class="gp-use-btn" onclick="useCreditsInCalculator('+p.credits+','+cfgSW+','+cfgEW+',false,0)">'
-        +(isSpanish?'Click para enviar '+p.credits+' créditos a calculadora — Año '+p.hsYr:'Click to send '+p.credits+' credits to calculator — Yr '+p.hsYr)
+      // Pass this year's DE credits so the calculator auto-fills the
+      // dual-enrollment section (gross total = student + DE; the calculator
+      // subtracts the DE credits back out, and the printout shows the class).
+      const deCurBtn=p.deCredits||0;
+      html+='<button class="gp-use-btn" onclick="useCreditsInCalculator('+p.credits+','+cfgSW+','+cfgEW+',false,0,'+deCurBtn+',0)">'
+        +(isSpanish
+          ?'Click para enviar '+p.credits+' créditos'+(deCurBtn>0?' + DE':'')+' a calculadora — Año '+p.hsYr
+          :'Click to send '+p.credits+' credits'+(deCurBtn>0?' + DE':'')+' to calculator — Yr '+p.hsYr)
         +'</button>';
     }
     html+='</div>';
     // After the first non-current, non-GYA period: insert combined 2-year button
     if(!combinedDone&&!p.isCur&&!p.isGyaSlot&&combinedCredits>0&&curP){
       combinedDone=true;
+      const deCurC=curP.deCredits||0, deNextC=p.deCredits||0;
       html+='<div style="margin:2px 0 8px;">'
-        +'<button class="gp-use-btn" onclick="useCreditsInCalculator('+combinedCredits+','+cfgSW+','+cfgEW+',true,'+cfgNW+')">'
+        +'<button class="gp-use-btn" onclick="useCreditsInCalculator('+combinedCredits+','+cfgSW+','+cfgEW+',true,'+cfgNW+','+deCurC+','+deNextC+')">'
         +(isSpanish
-          ?'Click para enviar '+combinedCredits+' créditos a calculadora — Año '+curP.hsYr+' + '+p.hsYr
-          :'Click to send '+combinedCredits+' credits to calculator — Yr '+curP.hsYr+' + '+p.hsYr)
+          ?'Click para enviar '+combinedCredits+' créditos'+((deCurC+deNextC)>0?' + DE':'')+' a calculadora — Año '+curP.hsYr+' + '+p.hsYr
+          :'Click to send '+combinedCredits+' credits'+((deCurC+deNextC)>0?' + DE':'')+' to calculator — Yr '+curP.hsYr+' + '+p.hsYr)
         +'</button></div>';
     }
   });
@@ -4569,11 +4579,41 @@ function calcGradPlan(){
   html+=gpDisclaimerHtml(); // after the last option box too
   resultEl.innerHTML=html;
 }
-function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext){
-  // 1. Set credits
+// Pick an estimated college-semester window inside the planning range.
+// Fall semester ≈ weeks 8–24 (late Aug–Dec), spring ≈ weeks 28–44 (Jan–May).
+function gpPickDeWindow(startWk,endWk){
+  if(startWk<=8&&endWk>=24)return[8,24];
+  if(startWk<=28&&endWk>=44)return[28,44];
+  const s=Math.max(1,startWk);
+  return[s,Math.min(s+16,Math.max(s,endWk))];
+}
+function removeDeAutoNote(){
+  var el=document.getElementById('deAutoFillNote');
+  if(el)el.remove();
+}
+// Blue notice inside the DE box telling the user the class was added from
+// the graduation plan with ESTIMATED dates they should confirm.
+function addDeAutoNote(){
+  removeDeAutoNote();
+  var box=document.querySelector('.de-box');
+  var inner=document.getElementById('deInner');
+  if(!box||!inner)return;
+  var p=document.createElement('p');
+  p.id='deAutoFillNote';
+  p.style.cssText='background:#e3f2fd;border:1px solid #64b5f6;border-radius:6px;padding:8px 10px;font-size:0.85em;margin:10px 0 0;line-height:1.4;color:#0d47a1;';
+  p.innerHTML='📚 '+(isSpanish
+    ?'La inscripción doble se agregó desde tu plan de graduación con fechas de semestre <strong>estimadas</strong>. Ajusta las semanas de inicio/fin cuando se conozca el horario del colegio.'
+    :'Dual enrollment was added from your graduation plan with <strong>estimated</strong> semester dates. Adjust the start/end weeks once the college schedule is known.');
+  box.insertBefore(p,inner);
+}
+function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext,deCur,deNext){
+  deCur=deCur||0;deNext=deNext||0;
+  // 1. Set credits — GROSS total (student + DE): the auto-filled DE classes
+  // below subtract their credits back out, so the weekly plan nets to the
+  // student's own workload and the printout shows the DE classes explicitly.
   const input=document.getElementById('totalCredits');
   if(!input)return;
-  input.value=credits;
+  input.value=credits+deCur+deNext;
   input.dispatchEvent(new Event('input'));
   if(startWk){
     // 2. Set cross-year toggle and update UI (disables/enables #endWeek)
@@ -4596,9 +4636,46 @@ function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext){
       const endNextSel=document.getElementById('endWeekNext');
       if(endNextSel)endNextSel.value=String(endWkNext);
     }
-    // 5. Refresh DE dropdowns and recalculate
+    // 5. Refresh DE dropdowns
     populateDeDropdowns();
     populateOpDropdowns();
+    // 5b. Auto-fill the dual-enrollment section from the graduation plan.
+    // Always reset first so a previous button's DE fill never lingers.
+    resetDualEnrollment();
+    if(deCur>0||deNext>0){
+      document.getElementById('deToggle').checked=true;
+      // Build per-class specs: 20 credits in one year = two 10-credit classes
+      const specs=[];
+      if(deCur>=20){specs.push({t:'currentYear',c:10},{t:'currentYear',c:10});}
+      else if(deCur>0){specs.push({t:'currentYear',c:deCur});}
+      if(deNext>=20){specs.push({t:'nextYear',c:10},{t:'nextYear',c:10});}
+      else if(deNext>0){specs.push({t:'nextYear',c:deNext});}
+      specs.slice(0,2).forEach(function(s,idx){
+        const n=idx+1;
+        if(n===2)showDeClass2();
+        document.querySelectorAll('input[name="de'+n+'Timing"]').forEach(function(r){r.checked=(r.value===s.t);});
+        document.getElementById('de'+n+'Credits').value=String(s.c);
+      });
+      updateDeUI();
+      // Estimated semester windows (user is told to adjust these)
+      const curMax=crossYear?(schoolYearData?schoolYearData.totalWeeks:52):endWk;
+      const winCur=gpPickDeWindow(startWk,curMax);
+      specs.slice(0,2).forEach(function(s,idx){
+        const n=idx+1;
+        if(s.t==='currentYear'){
+          const st=document.getElementById('de'+n+'Start');
+          const en=document.getElementById('de'+n+'End');
+          if(st)st.value=String(winCur[0]);
+          if(en)en.value=String(winCur[1]);
+        } else {
+          const st=document.getElementById('de'+n+'StartNext');
+          const en=document.getElementById('de'+n+'EndNextFull');
+          if(st)st.value='8';
+          if(en)en.value='24';
+        }
+      });
+      addDeAutoNote();
+    }
     calculateCredits();
   }
   // 6. Scroll. Desktop is left exactly as the original implementation; only
