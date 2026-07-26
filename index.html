@@ -216,6 +216,8 @@ select {
 .gp-chip-walk{background:#e8f5e9;border:1.5px solid #66bb6a;color:#1b5e20;}
 .gp-chip-diploma{background:#fff3e0;border:1.5px solid #ffb74d;color:#8d4e00;}
 .gp-legend{font-size:0.78em;color:#555;text-align:center;margin:0 0 10px;line-height:1.45;}
+/* Not-official disclaimer line repeated after every option box */
+.gp-not-official{font-size:0.68em;color:#999;text-align:center;margin:6px 0 14px;line-height:1.4;letter-spacing:0.01em;}
 /* 1-class / 2-classes dual-enrollment pill toggle */
 .gp-de-toggle{display:flex;gap:8px;justify-content:center;margin:2px 0 10px;}
 .gp-de-btn{padding:6px 14px;border:2px solid #90caf9;border-radius:16px;background:#fff;cursor:pointer;font-size:0.85em;font-weight:bold;color:#1565c0;transition:all 0.2s;}
@@ -234,7 +236,6 @@ select {
 /* Print-only elements hidden by default on screen */
 .print-only,
 .print-section-title,
-.print-name-line,
 .print-running-footer { display: none; }
 
 /* Screen-only on-screen tip near the Print button */
@@ -301,6 +302,18 @@ select {
     padding: 0 0 8px !important;
     cursor: default !important;
   }
+  /* === ONE OPTION BOX PER PRINTED PAGE ===
+     Every option section that follows a disclaimer line (i.e., all but the
+     first) starts a fresh page. DOM order is [box, -Or-, disclaimer, box…],
+     so the -Or- line and its disclaimer stay on the PREVIOUS box's page —
+     each printed page ends with the not-official line under its option. */
+  #gpResult .gp-not-official + .gp-plan-section,
+  #gpResult .gp-not-official + .gp-int-card {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  /* Fine print stays readable on paper */
+  .gp-not-official { color: #666 !important; font-size: 8.5pt !important; }
 
   /* === SECTION TITLE BARS ===
      Each print-section-title forces a new page and provides a clean,
@@ -315,21 +328,6 @@ select {
     border-bottom: 1.5px solid #1a3a6b !important;
     padding: 0 0 6px !important;
     margin: 0 0 14px !important;
-  }
-
-  /* === FERPA-SAFE BLANK WRITE-IN LINE (top of page 1) === */
-  .print-name-line {
-    align-items: flex-end !important;
-    gap: 12px !important;
-    margin: 0 0 14px !important;
-    font-size: 10.5pt !important;
-    color: #333 !important;
-  }
-  .print-name-line .write-label { flex-shrink: 0; font-weight: 500; }
-  .print-name-line .write-blank {
-    flex: 1;
-    border-bottom: 1px solid #888;
-    height: 18px;
   }
 
   /* === FOOTER DISCLAIMER POLISH ===
@@ -3509,8 +3507,6 @@ function applyTranslations() {
   if (printFooterTextEl) printFooterTextEl.textContent = isSpanish
     ? 'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso '
     : 'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed ';
-  const printNameLblEl = document.getElementById('printNameLabel');
-  if (printNameLblEl) printNameLblEl.textContent = isSpanish ? 'Nombre del estudiante:' : 'Student name:';
   const printTitleSkipEl = document.getElementById('printTitleSkipWeeks');
   if (printTitleSkipEl) printTitleSkipEl.innerHTML = isSpanish ? 'Período de Planificación y Semanas Omitidas' : 'Planning Period &amp; Skipped Weeks';
   const printTitleDeEl = document.getElementById('printTitleDE');
@@ -3774,6 +3770,27 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
       +'</div>';
       return;
     }
+    // ── Dual-enrollment mini-row: rendered just above the school year the
+    // class(es) actually happen in, so the plan shows WHEN they occur and
+    // the running totals rise inside that year. ────────────────────────
+    if(p.deCredits){
+      const deLbl=p.deCredits>=20
+        ?(isSpanish?'2 Clases de Inscripción Doble':'2 Dual Enrollment Classes')
+        :(isSpanish?'Clase de Inscripción Doble':'Dual Enrollment Class');
+      const deCum=p.cumEnd-p.credits; // total once this year's DE credits land
+      html+='<div class="gp-year-row" style="background:#e3f2fd;border:2px solid #64b5f6;">'
+        +'<div class="gp-year-top">'
+          +'<div class="gp-year-left">'
+            +'<div class="gp-year-label">📚 '+deLbl+'</div>'
+            +'<div class="gp-year-sub">'+(isSpanish?'Durante ':'During ')+p.yearLabel+' · '+(isSpanish?'habla con tu maestro/a':'talk with your teacher')+'</div>'
+          +'</div>'
+          +'<div class="gp-year-credits">'
+            +'<strong style="color:#1565c0;">+'+p.deCredits+' '+(isSpanish?'créditos':'credits')+'</strong>'
+            +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+deCum+' / 230</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
+    }
     // ── Standard row ────────────────────────────────────────────────
     const paceClass=p.pace<=2.0?'gp-pace-green':p.pace<=2.5?'gp-pace-yellow':p.pace<=3.0?'gp-pace-orange':'gp-pace-red';
     const paceIcon=p.pace<=2.0?'✅':p.pace<=2.5?'⚠️':p.pace<=3.0?'⚠️':'🚨';
@@ -3929,7 +3946,7 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
   const lastS=steady[steady.length-1];
   const finishIso=lastS.syd.isoStarts[Math.min(lastS.finishWk,lastS.syd.totalWeeks)];
   const finishDate=gpMonthDay(finishIso,isSpanish);
-  let h='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+  let h=gpOrDividerHtml();
   h+='<div class="gp-plan-section gp-plan-steady">';
   h+='<div class="gp-section-label">'
     +(isSpanish?'Opción '+optNum+': Ritmo Constante — 2 créditos/semana':'Option '+optNum+': Steady Pace — 2 credits/week')
@@ -4043,23 +4060,87 @@ function gpDeToggleHtml(can1,can2,eff){
   }
   return h;
 }
-// Blue "+N credits" dual-enrollment row shown above the plan rows
-function gpDeRowHtml(count,runningTotal){
-  const lbl=count===2
-    ?(isSpanish?'2 Clases de Inscripción Doble':'2 Dual Enrollment Classes')
-    :(isSpanish?'Clase de Inscripción Doble':'Dual Enrollment Class');
-  return '<div class="gp-year-row" style="background:#e3f2fd;border:2px solid #64b5f6;">'
-    +'<div class="gp-year-top">'
-      +'<div class="gp-year-left">'
-        +'<div class="gp-year-label">📚 '+lbl+'</div>'
-        +'<div class="gp-year-sub">'+(isSpanish?'Habla con tu maestro/a para inscribirte':'Talk with your teacher about enrolling')+'</div>'
-      +'</div>'
-      +'<div class="gp-year-credits">'
-        +'<strong style="color:#1565c0;">+'+(10*count)+' '+(isSpanish?'créditos':'credits')+'</strong>'
-        +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+runningTotal+' / 230</div>'
-      +'</div>'
-    +'</div>'
-  +'</div>';
+// Which school year(s) the DE classes land in.
+// 1 class:  0 = this school year, 1 = next school year
+// 2 classes: 0 = both this year, 1 = one this year + one next, 2 = both next
+let gpDePlace=0;
+function setGpDePlace(n){gpDePlace=n;calcGradPlan();}
+// Front-load student credits at 2 cr/week, crediting DE classes in the
+// specific period they occur (dePer[i] = DE credits earned during period i).
+// Running totals therefore rise by the DE amount inside that school year.
+function gpFrontLoadWithDe(periods,credEarned,selfRemaining,dePer){
+  const BM=[0,60,120,180,230];
+  const MAX_PACE=2;
+  let cum=credEarned,rem=selfRemaining;
+  periods.forEach(function(p,i){
+    const de=dePer[i]||0;
+    p.bmTarget=BM[Math.min(p.hsYr,4)];
+    if(rem<=0){p.credits=0;}
+    else{
+      const need=Math.max(0,p.bmTarget-cum-de);
+      p.credits=Math.min(need,rem,p.weeks*MAX_PACE);
+    }
+    rem-=p.credits;
+    cum+=p.credits+de;
+    p.deCredits=de;
+    p.cumEnd=cum;
+    p.pace=p.weeks>0?p.credits/p.weeks:0;
+  });
+  return rem;
+}
+// Distribute deTotal across periods per the placement choice, then front-load
+// the student's own credits around it. Falls back to all-DE-this-year if the
+// chosen placement somehow can't fit (safety net; placements are fungible in
+// total capacity, so this should not trigger in practice).
+function gpApplyDePlacement(periods,credEarned,selfRemaining,deTotal,placeIdx,count){
+  const L=periods.length;
+  let dePer=new Array(L).fill(0);
+  if(L===1){dePer[0]=deTotal;}
+  else if(count===1){dePer[placeIdx===1?1:0]=10;}
+  else{
+    if(placeIdx===2)dePer[1]=20;
+    else if(placeIdx===1){dePer[0]=10;dePer[1]=10;}
+    else dePer[0]=20;
+  }
+  let lo=gpFrontLoadWithDe(periods,credEarned,selfRemaining,dePer);
+  if(lo>0){
+    dePer=new Array(L).fill(0);dePer[0]=deTotal;
+    lo=gpFrontLoadWithDe(periods,credEarned,selfRemaining,dePer);
+  }
+  return lo;
+}
+// Placement pill row — only meaningful when the plan spans 2+ school years
+function gpDePlaceToggleHtml(count,eff){
+  const btn=function(n,label){
+    return '<button type="button" class="gp-de-btn'+(eff===n?' active':'')+'" onclick="setGpDePlace('+n+')">'+label+'</button>';
+  };
+  let h='<div style="font-size:0.78em;color:#555;text-align:center;margin:6px 0 2px;font-weight:600;">'
+    +(isSpanish?'¿En qué año escolar tomarías la(s) clase(s)?':'Which school year would the class(es) happen in?')
+    +'</div><div class="gp-de-toggle">';
+  if(count===1){
+    h+=btn(0,isSpanish?'Este año escolar':'This school year');
+    h+=btn(1,isSpanish?'El siguiente año escolar':'Next school year');
+  }else{
+    h+=btn(0,isSpanish?'Ambas este año':'Both this year');
+    h+=btn(1,isSpanish?'1 este año + 1 el siguiente':'1 this year + 1 next');
+    h+=btn(2,isSpanish?'Ambas el siguiente año':'Both next year');
+  }
+  h+='</div>';
+  return h;
+}
+// Not-official disclaimer line with today's date — repeated after every
+// option box in the planner (under each -Or- divider and after the last
+// box), so any option screenshotted or printed alone still carries it.
+function gpDisclaimerHtml(){
+  const d=new Date().toLocaleDateString(isSpanish?'es-ES':'en-US',{year:'numeric',month:'long',day:'numeric'});
+  return '<p class="gp-not-official">'+(isSpanish
+    ?'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso '+d
+    :'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed '+d)
+    +'</p>';
+}
+// -Or- divider with the disclaimer line tucked underneath it
+function gpOrDividerHtml(){
+  return '<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>'+gpDisclaimerHtml();
 }
 // One-line legend teaching the graduation vs ceremony distinction — shown
 // under the planner summary bar so the chips below need no explanation.
@@ -4200,6 +4281,22 @@ function calcGradPlan(){
       const deFit=effDe===2?deFit2:deFit1;
       if(deFit){
         const deGradClass=deFit.gradSY+1;
+        // Re-load with the chosen year placement, then re-apply the
+        // no-0-credit-graduation-year shift (a grad year holding only the
+        // DE class itself is fine — the DE row explains the credits).
+        const effPlaceX=Math.min(gpDePlace,effDe===1?1:2);
+        gpApplyDePlacement(deFit.periods,credEarned,credRemaining-10*effDe,10*effDe,effPlaceX,effDe);
+        if(deFit.periods.length>1){
+          const lastP=deFit.periods[deFit.periods.length-1];
+          const prevP=deFit.periods[deFit.periods.length-2];
+          if(lastP.credits===0&&!lastP.deCredits&&prevP.credits>0){
+            const shift=Math.min(10,prevP.credits);
+            prevP.credits-=shift;prevP.cumEnd-=shift;
+            prevP.pace=prevP.weeks>0?prevP.credits/prevP.weeks:0;
+            lastP.credits+=shift;
+            lastP.pace=lastP.weeks>0?lastP.credits/lastP.weeks:0;
+          }
+        }
         const _curPD=deFit.periods.find(p=>p.isCur);
         const _nxtPD=deFit.periods.find(p=>!p.isCur);
         const combinedD=(_curPD&&_nxtPD)?_curPD.credits+_nxtPD.credits:0;
@@ -4208,12 +4305,13 @@ function calcGradPlan(){
           curEndWk:_curPD?(_curPD.isGrad?46:syData.totalWeeks):syData.totalWeeks,
           nextEndWk:_nxtPD?(_nxtPD.isGrad?46:generateSchoolYear(_nxtPD.sy).totalWeeks):46
         };
-        htmlX+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+        htmlX+=gpOrDividerHtml();
         htmlX+='<div class="gp-plan-section gp-plan-de">';
         htmlX+='<div class="gp-section-label">'
           +(isSpanish?'Opción 2: Con Inscripción Doble — Clase de '+deGradClass:'Option 2: With Dual Enrollment — Class of '+deGradClass)
           +'</div>';
         if(deFit1&&deFit2){htmlX+=gpDeToggleHtml(!!deFit1,!!deFit2,effDe);}
+        if(deFit.periods.length>1){htmlX+=gpDePlaceToggleHtml(effDe,effPlaceX);}
         htmlX+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
           +(isSpanish
             ?'Cada clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades '+(effDe===2?'dos':'una')+':'
@@ -4226,8 +4324,6 @@ function calcGradPlan(){
               :'You could graduate a whole school year earlier — Class of '+deGradClass+'!')
             +'</p>';
         }
-        // Dual-enrollment credit row (blue, mirrors the GYA-slot style)
-        htmlX+=gpDeRowHtml(effDe,credEarned+10*effDe);
         htmlX+=gpRenderRows(deFit.periods,true,combinedD,calcConfigD);
         htmlX+='</div>';
       }
@@ -4240,6 +4336,7 @@ function calcGradPlan(){
           :'A single dual-enrollment class (≈10 credits) could cover all your remaining credits. Talk with your teacher about this option.')
         +'</div>';
     }
+    htmlX+=gpDisclaimerHtml(); // after the last option box too
     resultEl.innerHTML=htmlX;
     return;
   }
@@ -4335,6 +4432,10 @@ function calcGradPlan(){
         if(effDe===1&&!can1)effDe=2;
         if(effDe===2&&!can2)effDe=1;
         const periods4de=effDe===2?per2:per1;
+        // Re-load with the chosen year placement (which school year the DE
+        // classes land in) so rows and running totals reflect the choice
+        const effPlace=Math.min(gpDePlace,effDe===1?1:2);
+        gpApplyDePlacement(periods4de,credEarned,credRemaining-10*effDe,10*effDe,effPlace,effDe);
         const _curPDe=periods4de.find(p=>p.isCur);
         const _nxtPDe=periods4de.find(p=>!p.isCur&&!p.isGyaSlot);
         const combinedDe=(_curPDe&&_nxtPDe)?_curPDe.credits+_nxtPDe.credits:0;
@@ -4343,13 +4444,15 @@ function calcGradPlan(){
           curEndWk:_curPDe?(_curPDe.isGrad?46:syData.totalWeeks):syData.totalWeeks,
           nextEndWk:_nxtPDe?(_nxtPDe.isGrad?46:generateSchoolYear(_nxtPDe.sy).totalWeeks):46
         };
-        html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+        html+=gpOrDividerHtml();
         html+='<div class="gp-plan-section gp-plan-de">';
         html+='<div class="gp-section-label">'
           +(isSpanish?'Opción '+altNum+': Con Inscripción Doble — Clase de '+classOf:'Option '+altNum+': With Dual Enrollment — Class of '+classOf)
           +'</div>';
         // Show the 1/2 toggle whenever the 2-class variant is possible
         if(can2){html+=gpDeToggleHtml(can1,can2,effDe);}
+        // Year-placement pills (only when the plan spans 2+ school years)
+        if(periods4de.length>1){html+=gpDePlaceToggleHtml(effDe,effPlace);}
         html+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
           +(isSpanish
             ?'Cada clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades '+(effDe===2?'dos':'una')+':'
@@ -4360,7 +4463,6 @@ function calcGradPlan(){
             ?'¡Con '+(effDe===2?'dos clases':'una clase')+' de inscripción doble, terminas antes de la fecha límite de la Semana 46 y participas en la ceremonia de mayo de '+(gradSY4+1)+'!'
             :'With '+(effDe===2?'two dual-enrollment classes':'one dual-enrollment class')+', you finish by the Week 46 deadline and walk in the May '+(gradSY4+1)+' ceremony!')
           +'</p>';
-        html+=gpDeRowHtml(effDe,credEarned+10*effDe);
         html+=gpRenderRows(periods4de,true,combinedDe,calcConfigDe);
         html+='</div>';
         altNum++;
@@ -4374,8 +4476,8 @@ function calcGradPlan(){
       const steadyHtml=gpRenderSteadySection(altNum,freshmanYear,gradSY4,currentSY,curWeek,syData,credEarned,credRemaining,classOf);
       if(steadyHtml){html+=steadyHtml;altNum++;}
     }
-    // -Or- divider
-    html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+    // -Or- divider (with the not-official disclaimer line underneath)
+    html+=gpOrDividerHtml();
     // Section 2 — Y5 lighter option.
     // If the max pace across the 5-year plan is still above 2 cr/wk, the
     // student is in tough enough territory that an automated even-distribution
@@ -4410,7 +4512,7 @@ function calcGradPlan(){
     const gyaWorks = gyaEligible && leftoverGya===0 && maxPaceGya<=2.0
       && periods4gya.some(p=>p.isGyaSlot);
     if(gyaWorks){
-      html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+      html+=gpOrDividerHtml();
       html+='<div class="gp-int-card gp-int-gya" style="font-size:0.95em;">';
       html+='<div style="text-align:center;"><strong style="font-size:1.05em;">'
         +(isSpanish?'Opción '+(altNum+1)+': Grizzly Youth Academy (GYA)':'Option '+(altNum+1)+': Grizzly Youth Academy (GYA)')+'</strong></div>';
@@ -4439,6 +4541,7 @@ function calcGradPlan(){
       html+='</div>';
     }
   }
+  html+=gpDisclaimerHtml(); // after the last option box too
   resultEl.innerHTML=html;
 }
 function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext){
