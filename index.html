@@ -172,6 +172,7 @@ select {
   .gp-bm-hit, .gp-bm-miss{font-size:0.74em;}
   .gp-chip{font-size:0.7em;padding:3px 8px;}
   .gp-legend{font-size:0.7em;}
+  .gp-de-btn{font-size:0.78em;padding:5px 10px;}
   /* Force section labels (Opción 1 / Opción 2) onto a single line */
   .gp-section-label{font-size:0.68em;padding:7px 8px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.01em;}
   .gp-plan-section{padding:10px 10px 6px;}
@@ -215,6 +216,12 @@ select {
 .gp-chip-walk{background:#e8f5e9;border:1.5px solid #66bb6a;color:#1b5e20;}
 .gp-chip-diploma{background:#fff3e0;border:1.5px solid #ffb74d;color:#8d4e00;}
 .gp-legend{font-size:0.78em;color:#555;text-align:center;margin:0 0 10px;line-height:1.45;}
+/* 1-class / 2-classes dual-enrollment pill toggle */
+.gp-de-toggle{display:flex;gap:8px;justify-content:center;margin:2px 0 10px;}
+.gp-de-btn{padding:6px 14px;border:2px solid #90caf9;border-radius:16px;background:#fff;cursor:pointer;font-size:0.85em;font-weight:bold;color:#1565c0;transition:all 0.2s;}
+.gp-de-btn.active{background:#1565c0;color:#fff;border-color:#1565c0;}
+.gp-de-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.gp-de-btn:hover:not(.active):not(:disabled){background:#e3f2fd;}
 .gp-bm-hit{color:#2e7d32;font-size:0.85em;}
 .gp-bm-miss{color:#c62828;font-size:0.85em;}
 .gp-or-divider{text-align:center;margin:18px 0;position:relative;}
@@ -4011,6 +4018,49 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
   h+='</div>';
   return h;
 }
+// Number of dual-enrollment classes assumed in the "With Dual Enrollment"
+// sections (1 or 2). Shared by the standard and 5th-year views; switching
+// re-runs calcGradPlan so the whole plan updates.
+let gpDeCount=1;
+function setGpDeCount(n){gpDeCount=n;calcGradPlan();}
+// Pill toggle for 1 vs 2 DE classes. A disabled pill means that count can't
+// reach the Week 46 deadline; when 1 class can't but 2 can, an explicit note
+// says so — that's the "two classes push you over the threshold" case.
+function gpDeToggleHtml(can1,can2,eff){
+  const btn=function(n,can){
+    return '<button type="button" class="gp-de-btn'+(eff===n?' active':'')+'"'+(can?'':' disabled')
+      +' onclick="setGpDeCount('+n+')">'
+      +(isSpanish?(n===1?'1 Clase DE (+10)':'2 Clases DE (+20)'):(n===1?'1 DE Class (+10)':'2 DE Classes (+20)'))
+      +'</button>';
+  };
+  let h='<div class="gp-de-toggle">'+btn(1,can1)+btn(2,can2)+'</div>';
+  if(!can1&&can2){
+    h+='<p style="font-size:0.8em;color:#c62828;text-align:center;margin:0 0 8px;font-weight:600;line-height:1.35;">'
+      +(isSpanish
+        ?'Una clase no es suficiente — se necesitan dos para llegar a la fecha límite de la Semana 46.'
+        :'One class isn’t enough — it takes two to reach the Week 46 deadline.')
+      +'</p>';
+  }
+  return h;
+}
+// Blue "+N credits" dual-enrollment row shown above the plan rows
+function gpDeRowHtml(count,runningTotal){
+  const lbl=count===2
+    ?(isSpanish?'2 Clases de Inscripción Doble':'2 Dual Enrollment Classes')
+    :(isSpanish?'Clase de Inscripción Doble':'Dual Enrollment Class');
+  return '<div class="gp-year-row" style="background:#e3f2fd;border:2px solid #64b5f6;">'
+    +'<div class="gp-year-top">'
+      +'<div class="gp-year-left">'
+        +'<div class="gp-year-label">📚 '+lbl+'</div>'
+        +'<div class="gp-year-sub">'+(isSpanish?'Habla con tu maestro/a para inscribirte':'Talk with your teacher about enrolling')+'</div>'
+      +'</div>'
+      +'<div class="gp-year-credits">'
+        +'<strong style="color:#1565c0;">+'+(10*count)+' '+(isSpanish?'créditos':'credits')+'</strong>'
+        +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+runningTotal+' / 230</div>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+}
 // One-line legend teaching the graduation vs ceremony distinction — shown
 // under the planner summary bar so the chips below need no explanation.
 function gpLegendHtml(){
@@ -4142,7 +4192,12 @@ function calcGradPlan(){
     htmlX+='</div>';
     // ── Option 2: with one dual-enrollment class (+10 credits) ───
     if(credRemaining>10){
-      const deFit=gpFit(credEarned+10,credRemaining-10);
+      const deFit1=gpFit(credEarned+10,credRemaining-10);
+      const deFit2=credRemaining>20?gpFit(credEarned+20,credRemaining-20):null;
+      let effDe=gpDeCount;
+      if(effDe===2&&!deFit2)effDe=1;
+      if(effDe===1&&!deFit1)effDe=2;
+      const deFit=effDe===2?deFit2:deFit1;
       if(deFit){
         const deGradClass=deFit.gradSY+1;
         const _curPD=deFit.periods.find(p=>p.isCur);
@@ -4158,10 +4213,11 @@ function calcGradPlan(){
         htmlX+='<div class="gp-section-label">'
           +(isSpanish?'Opción 2: Con Inscripción Doble — Clase de '+deGradClass:'Option 2: With Dual Enrollment — Class of '+deGradClass)
           +'</div>';
+        if(deFit1&&deFit2){htmlX+=gpDeToggleHtml(!!deFit1,!!deFit2,effDe);}
         htmlX+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
           +(isSpanish
-            ?'Una clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades una:'
-            :'One dual-enrollment class at the community college typically earns 10 high school credits. Here’s your plan if you add one:')
+            ?'Cada clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades '+(effDe===2?'dos':'una')+':'
+            :'Each dual-enrollment class at the community college typically earns 10 high school credits. Here’s your plan if you add '+(effDe===2?'two':'one')+':')
           +'</p>';
         if(deFit.gradSY<base.gradSY){
           htmlX+='<p style="color:#1565c0;font-weight:bold;margin:0 0 8px;font-size:0.9em;text-align:center;line-height:1.3;">🎉 '
@@ -4171,18 +4227,7 @@ function calcGradPlan(){
             +'</p>';
         }
         // Dual-enrollment credit row (blue, mirrors the GYA-slot style)
-        htmlX+='<div class="gp-year-row" style="background:#e3f2fd;border:2px solid #64b5f6;">'
-          +'<div class="gp-year-top">'
-            +'<div class="gp-year-left">'
-              +'<div class="gp-year-label">📚 '+(isSpanish?'Clase de Inscripción Doble':'Dual Enrollment Class')+'</div>'
-              +'<div class="gp-year-sub">'+(isSpanish?'Habla con tu maestro/a para inscribirte':'Talk with your teacher about enrolling')+'</div>'
-            +'</div>'
-            +'<div class="gp-year-credits">'
-              +'<strong style="color:#1565c0;">+10 '+(isSpanish?'créditos':'credits')+'</strong>'
-              +'<div class="gp-running-total">'+(isSpanish?'Acumulado: ':'Running Total: ')+(credEarned+10)+' / 230</div>'
-            +'</div>'
-          +'</div>'
-        +'</div>';
+        htmlX+=gpDeRowHtml(effDe,credEarned+10*effDe);
         htmlX+=gpRenderRows(deFit.periods,true,combinedD,calcConfigD);
         htmlX+='</div>';
       }
@@ -4271,6 +4316,56 @@ function calcGradPlan(){
   // Alternative sections appear when benchmarks are missed or credits won't fit in 4 years
   let altNum=2; // dynamic option numbering for the alternative sections
   if(hasHighPace){
+    // Dual-enrollment rescue: when Option 1 won't fit but ONE dual-enrollment
+    // class (+10 credits) makes everything fit by the Week 46 deadline, that
+    // is the student's path to walking in the May ceremony with their class —
+    // show it first among the alternatives. Option 1 stays as-is above.
+    if(opt1WontFit&&credRemaining>10){
+      // Try both counts: n classes = +10n credits off the student's load.
+      const mkDe=function(n){
+        if(credRemaining<=10*n)return null;
+        const per=gpBuildPeriods(freshmanYear,gradSY4,currentSY,curWeek,syData,skippedWeek);
+        const lo=gpFrontLoad(per,credEarned+10*n,credRemaining-10*n);
+        return lo===0?per:null;
+      };
+      const per1=mkDe(1),per2=mkDe(2);
+      if(per1||per2){
+        const can1=!!per1,can2=!!per2;
+        let effDe=gpDeCount;
+        if(effDe===1&&!can1)effDe=2;
+        if(effDe===2&&!can2)effDe=1;
+        const periods4de=effDe===2?per2:per1;
+        const _curPDe=periods4de.find(p=>p.isCur);
+        const _nxtPDe=periods4de.find(p=>!p.isCur&&!p.isGyaSlot);
+        const combinedDe=(_curPDe&&_nxtPDe)?_curPDe.credits+_nxtPDe.credits:0;
+        const calcConfigDe={
+          startWk:curWeek,
+          curEndWk:_curPDe?(_curPDe.isGrad?46:syData.totalWeeks):syData.totalWeeks,
+          nextEndWk:_nxtPDe?(_nxtPDe.isGrad?46:generateSchoolYear(_nxtPDe.sy).totalWeeks):46
+        };
+        html+='<div class="gp-or-divider"><span>'+(isSpanish?'- O -':'- Or -')+'</span></div>';
+        html+='<div class="gp-plan-section gp-plan-de">';
+        html+='<div class="gp-section-label">'
+          +(isSpanish?'Opción '+altNum+': Con Inscripción Doble — Clase de '+classOf:'Option '+altNum+': With Dual Enrollment — Class of '+classOf)
+          +'</div>';
+        // Show the 1/2 toggle whenever the 2-class variant is possible
+        if(can2){html+=gpDeToggleHtml(can1,can2,effDe);}
+        html+='<p style="font-size:0.85em;color:#555;margin:6px 0 10px;text-align:center;line-height:1.4;">'
+          +(isSpanish
+            ?'Cada clase de inscripción doble en el colegio comunitario suele otorgar 10 créditos de preparatoria. Así se vería tu plan si añades '+(effDe===2?'dos':'una')+':'
+            :'Each dual-enrollment class at the community college typically earns 10 high school credits. Here’s your plan if you add '+(effDe===2?'two':'one')+':')
+          +'</p>';
+        html+='<p style="color:#1565c0;font-weight:bold;margin:0 0 8px;font-size:0.9em;text-align:center;line-height:1.3;">🎉 '
+          +(isSpanish
+            ?'¡Con '+(effDe===2?'dos clases':'una clase')+' de inscripción doble, terminas antes de la fecha límite de la Semana 46 y participas en la ceremonia de mayo de '+(gradSY4+1)+'!'
+            :'With '+(effDe===2?'two dual-enrollment classes':'one dual-enrollment class')+', you finish by the Week 46 deadline and walk in the May '+(gradSY4+1)+' ceremony!')
+          +'</p>';
+        html+=gpDeRowHtml(effDe,credEarned+10*effDe);
+        html+=gpRenderRows(periods4de,true,combinedDe,calcConfigDe);
+        html+='</div>';
+        altNum++;
+      }
+    }
     // Steady-pace projection: only when Option 1 truly can't fit — shows
     // exactly where a constant 2 cr/week lands (before the ceremony
     // deadline, after it but within the class year, or a short reduced
