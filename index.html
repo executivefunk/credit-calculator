@@ -216,8 +216,9 @@ select {
 .gp-chip-walk{background:#e8f5e9;border:1.5px solid #66bb6a;color:#1b5e20;}
 .gp-chip-diploma{background:#fff3e0;border:1.5px solid #ffb74d;color:#8d4e00;}
 .gp-legend{font-size:0.78em;color:#555;text-align:center;margin:0 0 10px;line-height:1.45;}
-/* Not-official disclaimer line repeated after every option box */
-.gp-not-official{font-size:0.68em;color:#999;text-align:center;margin:6px 0 14px;line-height:1.4;letter-spacing:0.01em;}
+/* Not-official disclaimer line repeated after every option box.
+   PRINT-ONLY: hidden on screen, shown when printing (see @media print). */
+.gp-not-official{display:none;font-size:0.68em;color:#999;text-align:center;margin:6px 0 14px;line-height:1.4;letter-spacing:0.01em;}
 /* 1-class / 2-classes dual-enrollment pill toggle */
 .gp-de-toggle{display:flex;gap:8px;justify-content:center;margin:2px 0 10px;}
 .gp-de-btn{padding:6px 14px;border:2px solid #90caf9;border-radius:16px;background:#fff;cursor:pointer;font-size:0.85em;font-weight:bold;color:#1565c0;transition:all 0.2s;}
@@ -312,8 +313,8 @@ select {
     page-break-before: always !important;
     break-before: page !important;
   }
-  /* Fine print stays readable on paper */
-  .gp-not-official { color: #666 !important; font-size: 8.5pt !important; }
+  /* Print-only: the per-option disclaimer lines appear on paper only */
+  .gp-not-official { display: block !important; color: #666 !important; font-size: 8.5pt !important; }
 
   /* === SECTION TITLE BARS ===
      Each print-section-title forces a new page and provides a clean,
@@ -4106,6 +4107,30 @@ function gpApplyDePlacement(periods,credEarned,selfRemaining,deTotal,placeIdx,co
   if(lo>0){
     dePer=new Array(L).fill(0);dePer[0]=deTotal;
     lo=gpFrontLoadWithDe(periods,credEarned,selfRemaining,dePer);
+  }
+  // Give the DE relief to the year the class is actually taken in: reduce
+  // that year's independent-study load by up to the DE credit amount,
+  // pushing the moved credits into later years' spare capacity. The move is
+  // capped by that spare capacity, so the Week 46 deadline is never broken —
+  // if there's no slack, the DE year stays at full pace (honestly).
+  if(lo===0){
+    for(let i=0;i<L-1;i++){
+      const de=dePer[i];
+      if(!de||periods[i].credits<=0)continue;
+      let toMove=Math.min(de,periods[i].credits);
+      for(let j=i+1;j<L&&toMove>0;j++){
+        const spare=periods[j].weeks*2-periods[j].credits;
+        const mv=Math.min(spare,toMove);
+        if(mv>0){periods[j].credits+=mv;periods[i].credits-=mv;toMove-=mv;}
+      }
+    }
+    // Recompute running totals and paces after the moves
+    let cum=credEarned;
+    periods.forEach(function(p){
+      cum+=p.credits+(p.deCredits||0);
+      p.cumEnd=cum;
+      p.pace=p.weeks>0?p.credits/p.weeks:0;
+    });
   }
   return lo;
 }
