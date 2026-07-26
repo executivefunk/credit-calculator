@@ -170,6 +170,8 @@ select {
   .gp-running-total{font-size:0.68em;}
   .gp-pace{font-size:0.76em;}
   .gp-bm-hit, .gp-bm-miss{font-size:0.74em;}
+  .gp-chip{font-size:0.7em;padding:3px 8px;}
+  .gp-legend{font-size:0.7em;}
   /* Force section labels (Opción 1 / Opción 2) onto a single line */
   .gp-section-label{font-size:0.68em;padding:7px 8px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.01em;}
   .gp-plan-section{padding:10px 10px 6px;}
@@ -207,6 +209,12 @@ select {
 .gp-plan-de .gp-section-label{background:#1565c0;}
 .gp-plan-steady{border:2px solid #00695c;background:#e0f2f1;}
 .gp-plan-steady .gp-section-label{background:#00695c;}
+/* Ceremony/diploma status chips — the year label stays plain ("Final Year");
+   these chips carry the walks-in-June vs diploma-after-deadline distinction */
+.gp-chip{display:inline-block;margin-top:7px;padding:4px 10px;border-radius:12px;font-size:0.8em;font-weight:600;line-height:1.35;}
+.gp-chip-walk{background:#e8f5e9;border:1.5px solid #66bb6a;color:#1b5e20;}
+.gp-chip-diploma{background:#fff3e0;border:1.5px solid #ffb74d;color:#8d4e00;}
+.gp-legend{font-size:0.78em;color:#555;text-align:center;margin:0 0 10px;line-height:1.45;}
 .gp-bm-hit{color:#2e7d32;font-size:0.85em;}
 .gp-bm-miss{color:#c62828;font-size:0.85em;}
 .gp-or-divider{text-align:center;margin:18px 0;position:relative;}
@@ -3774,10 +3782,11 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
     } else if(p.isPostGya){
       yearName=isSpanish?'Año '+p.hsYr+' (2do semestre, post-GYA)':'Year '+p.hsYr+' (2nd semester, post-GYA)';
     } else if(p.isGrad){
-      // "Ceremony" is deliberate: these rows are capped at Week 46, the
-      // graduation-ceremony credit deadline — unlike the Steady Pace rows,
-      // which may finish after Week 46 within the same school year.
-      yearName=isSpanish?'Año '+p.hsYr+' — Año Escolar de la Ceremonia de Graduación':'Year '+p.hsYr+' — Graduation Ceremony School Year';
+      // Plain label; the green "walks in the June ceremony" chip below the
+      // row carries the ceremony fact (these rows are capped at Week 46,
+      // the ceremony credit deadline). Deliberately NOT parallel wording
+      // with the Steady Pace "diploma" chip, so families can't confuse them.
+      yearName=isSpanish?'Año '+p.hsYr+' — Año Final':'Year '+p.hsYr+' — Final Year';
     } else {
       yearName=isSpanish?'Año '+p.hsYr+' (Año Escolar Completo)':'Year '+p.hsYr+' (Full School Year)';
     }
@@ -3813,6 +3822,13 @@ function gpRenderRows(periods,showUseBtn,combinedCredits,calcConfig){
         // only the final graduation row keeps its ✅ 230 confirmation.
         +(p.hideBm?'':'<div class="'+bmClass+'">'+bmIcon+' '+(isSpanish?'Benchmark: ':'Benchmark: ')+p.bmTarget+'</div>')
       +'</div>';
+    // Ceremony chip: every gpRenderRows graduation row plans completion by
+    // the Week 46 deadline, so the student walks in that June's ceremony.
+    if(p.isGrad){
+      html+='<div><span class="gp-chip gp-chip-walk">🎓 '
+        +(isSpanish?'Participa en la ceremonia de junio de '+(p.sy+1):'Walks in the June '+(p.sy+1)+' ceremony')
+        +'</span></div>';
+    }
     if(p.isCur&&p.skippedWeek){
       html+='<div style="margin-top:6px;padding:5px 8px;background:rgba(255,248,220,0.9);border-radius:5px;font-size:0.85em;color:#7a6000;">'
         +'⏭️ '+(isSpanish
@@ -3922,13 +3938,12 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
     const isLast=i===steady.length-1;
     const pace=p.weeksUsed>0?p.credits/p.weeksUsed:0;
     const wkNote=(isSpanish?'Semanas ':'Weeks ')+p.wkStart+'–'+p.finishWk+(isLast?(isSpanish?' → ¡graduación!':' → graduation!'):'');
-    // Naming convention: "Graduation School Year" = the school year the
-    // student completes their final credit (graduation day), whenever that
-    // lands. "Graduation Ceremony School Year" (in the Week-46-capped plans
-    // rendered by gpRenderRows) = planning for ceremony participation.
+    // Plain label; the chip below carries the outcome — green "walks in
+    // the June ceremony" when steady pace beats the Week 46 deadline,
+    // amber "diploma ~date" when it lands after the deadline.
     let nm;
     if(isLast){
-      nm=isSpanish?'Año '+p.hsYr+' — Año Escolar de Graduación':'Year '+p.hsYr+' — Graduation School Year';
+      nm=isSpanish?'Año '+p.hsYr+' — Año Final':'Year '+p.hsYr+' — Final Year';
     } else if(p.isCur){
       nm=isSpanish?'Año '+p.hsYr+' (Resto del Año Escolar)':'Year '+p.hsYr+' (Remainder of School Year)';
     } else {
@@ -3946,6 +3961,16 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
         +'</div>'
       +'</div>'
       +'<div class="gp-pace gp-pace-green" style="margin-top:7px;">✅ '+pace.toFixed(1)+' '+(isSpanish?'cr/semana':'cr/week')+'</div>';
+    if(isLast){
+      const walks=lastS.sy<gradSY4||(lastS.sy===gradSY4&&lastS.finishWk<=46);
+      h+=walks
+        ?'<div><span class="gp-chip gp-chip-walk">🎓 '
+          +(isSpanish?'Participa en la ceremonia de junio de '+(gradSY4+1):'Walks in the June '+(gradSY4+1)+' ceremony')
+          +'</span></div>'
+        :'<div><span class="gp-chip gp-chip-diploma">📜 '
+          +(isSpanish?'Diploma ~'+finishDate+' — después de la fecha límite de la ceremonia':'Diploma ~'+finishDate+' — after the ceremony deadline')
+          +'</span></div>';
+    }
     if(p.isCur&&p.credits>0){
       h+='<button class="gp-use-btn" onclick="useCreditsInCalculator('+p.credits+','+curWeek+','+syData.totalWeeks+',false,0)">'
         +(isSpanish?'Click para enviar '+p.credits+' créditos a calculadora — Año '+p.hsYr:'Click to send '+p.credits+' credits to calculator — Yr '+p.hsYr)
@@ -3985,6 +4010,14 @@ function gpRenderSteadySection(optNum,freshmanYear,gradSY4,currentSY,curWeek,syD
   h+='<div class="gp-int-card" style="'+calloutStyle+'font-size:0.9em;line-height:1.45;">'+callout+'</div>';
   h+='</div>';
   return h;
+}
+// One-line legend teaching the graduation vs ceremony distinction — shown
+// under the planner summary bar so the chips below need no explanation.
+function gpLegendHtml(){
+  return '<p class="gp-legend">'+(isSpanish
+    ?'<strong>Graduación</strong> = el día en que se completa el último crédito. La <strong>ceremonia de junio</strong> es la celebración — participan los estudiantes que terminan antes de la fecha límite de la Semana 46.'
+    :'<strong>Graduation</strong> = the day the final credit is completed. The <strong>June ceremony</strong> is the celebration — students finished by the Week 46 deadline walk in it.')
+    +'</p>';
 }
 function calcGradPlan(){
   const freshmanYear=parseInt(document.getElementById('gpFreshmanYear')?.value);
@@ -4080,6 +4113,7 @@ function calcGradPlan(){
       +'<span><strong>'+(isSpanish?'Créditos obtenidos: ':'Credits earned: ')+'</strong>'+credEarned+' / '+TOTAL+'</span>'
       +'<span><strong>'+(isSpanish?'Año de preparatoria: ':'High School Year: ')+'</strong>'+hsYear+'</span>'
       +'</div>';
+    htmlX+=gpLegendHtml();
     // ── Option 1: realistic front-loaded plan ────────────────────
     htmlX+='<div class="gp-plan-section gp-plan-extended">';
     htmlX+='<div class="gp-section-label">'
@@ -4193,6 +4227,7 @@ function calcGradPlan(){
     +'<span><strong>'+(isSpanish?'Créditos obtenidos: ':'Credits earned: ')+'</strong>'+credEarned+' / '+TOTAL+'</span>'
     +'<span><strong>'+(isSpanish?'Año de preparatoria: ':'High School Year: ')+'</strong>'+hsYear+'</span>'
     +'</div>';
+  html+=gpLegendHtml();
   // Compute combined credits (current year + next year) for each plan
   const _curP4=periods4.find(p=>p.isCur);
   const _nxtP4=periods4.find(p=>!p.isCur&&!p.isGyaSlot);
