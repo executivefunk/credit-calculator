@@ -262,6 +262,11 @@ select {
   .gp-header-hint, .gp-header-arrow { display: none !important; }
   #planButtons { display: none !important; }
   .print-tip-note { display: none !important; }
+  /* Interactive-only controls are meaningless on paper */
+  #addDE2Btn, #addOP2Btn, #removeDE2Btn, #removeOP2Btn,
+  #addCustomSkipBtn, #addNextYearCustomSkipBtn,
+  .custom-skip-row button,
+  .gp-use-btn { display: none !important; }
 
   /* === SHOW PRINT-ONLY ELEMENTS === */
   .print-section-title { display: block !important; }
@@ -314,6 +319,14 @@ select {
      break-before:avoid keeps a line glued to the content above it so it
      never orphans onto its own page. */
   .gp-not-official { display: block !important; color: #666 !important; font-size: 8.5pt !important; page-break-before: avoid !important; break-before: avoid !important; }
+  /* Class box + its disclaimer line move to a new page as one unit, so the
+     line always prints UNDER its box (never inside it, never separated). */
+  .print-pair {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .print-pair:has(> #deClass2Box:not(.visible)) { display: none !important; }
+  .print-pair:has(> #opClass2Box[style*="none"]) { display: none !important; }
 
   /* === SECTION TITLE BARS ===
      Each print-section-title forces a new page and provides a clean,
@@ -545,6 +558,7 @@ select {
         <label for="deToggle" id="labelDeToggle">I have a dual-enrollment class</label>
       </div>
       <div class="de-inner" id="deInner">
+        <div class="print-pair">
         <div class="de-class-box" id="deClass1Box">
           <h4 id="deClass1Title">Dual Enrollment Class 1</h4>
           <label for="de1Name" id="labelDe1Name" style="font-size:0.85em;margin-top:8px;">Class name (optional)</label>
@@ -581,9 +595,11 @@ select {
           </div>
           <label for="de1Credits" id="labelDe1Credits">How many high school credits will you earn from this class?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="de1Credits">
-          <p class="gp-not-official gp-not-official-static"></p>
+        </div>
+        <p class="gp-not-official gp-not-official-static"></p>
         </div>
         <button type="button" id="addDE2Btn" onclick="showDeClass2()" style="width:100%;padding:8px 12px;margin-top:8px;margin-bottom:8px;border:1px dashed #c8a96e;background:#fff8ec;border-radius:6px;cursor:pointer;font-size:0.9em;color:#8b6914;font-weight:bold;">+ Add a second dual-enrollment class</button>
+        <div class="print-pair">
         <div class="de-class-box" id="deClass2Box">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h4 id="deClass2Title" style="margin:0 0 8px;">Dual Enrollment Class 2</h4>
@@ -623,7 +639,8 @@ select {
           </div>
           <label for="de2Credits" id="labelDe2Credits">How many high school credits will you earn from this class?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="de2Credits">
-          <p class="gp-not-official gp-not-official-static"></p>
+        </div>
+        <p class="gp-not-official gp-not-official-static"></p>
         </div>
       </div>
     </div>
@@ -634,6 +651,7 @@ select {
         <label for="opToggle" id="labelOpToggle">I will be attending an outside program</label>
       </div>
       <div class="de-inner" id="opInner">
+        <div class="print-pair">
         <div class="de-class-box" id="opClass1Box">
           <h4 id="opClass1Title">Outside Program 1</h4>
           <label for="op1Name" id="labelOp1Name" style="font-size:0.85em;margin-top:8px;">Program name (optional)</label>
@@ -670,9 +688,11 @@ select {
           </div>
           <label for="op1Credits" id="labelOp1Credits">How many high school credits will you earn from this program?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="op1Credits">
-          <p class="gp-not-official gp-not-official-static"></p>
+        </div>
+        <p class="gp-not-official gp-not-official-static"></p>
         </div>
         <button type="button" id="addOP2Btn" onclick="showOpProgram2()" style="width:100%;padding:8px 12px;margin-top:8px;margin-bottom:8px;border:1px dashed #c62828;background:#fff0f3;border-radius:6px;cursor:pointer;font-size:0.9em;color:#c62828;font-weight:bold;">+ Add a second outside program</button>
+        <div class="print-pair">
         <div class="de-class-box" id="opClass2Box" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h4 id="opClass2Title" style="margin:0 0 8px;">Outside Program 2</h4>
@@ -712,7 +732,8 @@ select {
           </div>
           <label for="op2Credits" id="labelOp2Credits">How many high school credits will you earn from this program?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="op2Credits">
-          <p class="gp-not-official gp-not-official-static"></p>
+        </div>
+        <p class="gp-not-official gp-not-official-static"></p>
         </div>
       </div>
     </div>
