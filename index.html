@@ -236,8 +236,7 @@ select {
 
 /* Print-only elements hidden by default on screen */
 .print-only,
-.print-section-title,
-.print-running-footer { display: none; }
+.print-section-title { display: none; }
 
 /* Screen-only on-screen tip near the Print button */
 .print-tip-note {
@@ -251,8 +250,7 @@ select {
 }
 
 @media print {
-  /* Extra bottom margin reserves space for the repeating footer */
-  @page { size: letter portrait; margin: 0.55in 0.5in 0.75in 0.5in; }
+  @page { size: letter portrait; margin: 0.55in 0.5in 0.55in 0.5in; }
 
   /* === BASE PRINT RESET === */
   body { background: white !important; margin: 0; padding: 0; }
@@ -267,7 +265,6 @@ select {
 
   /* === SHOW PRINT-ONLY ELEMENTS === */
   .print-section-title { display: block !important; }
-  .print-running-footer { display: block !important; }
 
   /* === HIDE UNUSED / COLLAPSED SECTIONS === */
   /* Graduation planner: hidden when its body is collapsed (pure nav chrome). */
@@ -313,8 +310,10 @@ select {
     page-break-before: always !important;
     break-before: page !important;
   }
-  /* Print-only: the per-option disclaimer lines appear on paper only */
-  .gp-not-official { display: block !important; color: #666 !important; font-size: 8.5pt !important; }
+  /* Print-only: the per-option disclaimer lines appear on paper only.
+     break-before:avoid keeps a line glued to the content above it so it
+     never orphans onto its own page. */
+  .gp-not-official { display: block !important; color: #666 !important; font-size: 8.5pt !important; page-break-before: avoid !important; break-before: avoid !important; }
 
   /* === SECTION TITLE BARS ===
      Each print-section-title forces a new page and provides a clean,
@@ -346,19 +345,10 @@ select {
     margin-top: 8px !important;
   }
 
-  /* === REPEATING IDENTITY FOOTER (FERPA-safe, no PII) ===
-     Renders on every printed page via position:fixed (Chrome). */
-  .print-running-footer {
-    position: fixed !important;
-    bottom: 0.25in !important;
-    left: 0.5in !important;
-    right: 0.5in !important;
-    text-align: center !important;
-    font-size: 8.5pt !important;
-    color: #888 !important;
-    border-top: 0.5px solid #ccc !important;
-    padding-top: 5px !important;
-  }
+  /* NOTE: the old position:fixed repeating footer was removed — Safari does
+     not repeat fixed elements on printed pages. Every printed page instead
+     carries an in-flow .gp-not-official disclaimer line, which prints
+     identically in all browsers. */
 
   /* === KEEP-TOGETHER RULES ===
      Atomic items shouldn't split mid-element. */
@@ -426,10 +416,6 @@ select {
   <button onclick="window.print()" id="printButton" title="Print this page">Print</button>
 </div>
 
-<!-- FERPA-safe repeating footer (prints on every page, no student PII) -->
-<div class="print-running-footer" id="printRunningFooter">
-  <span id="printRunningFooterText">NOT AN OFFICIAL SCHOOL DOCUMENT &mdash; planning tool only &middot; printed </span><span id="printFooterDate"></span>
-</div>
 
 <div class="container">
   <div style="text-align: center; margin-bottom: 10px;">
@@ -490,6 +476,7 @@ select {
     <select id="startWeek"></select>
     <label for="endWeek" id="labelEndWeek">Which week do you want to finish by?</label>
     <select id="endWeek"></select>
+    <p class="gp-not-official gp-not-official-static"></p>
     <div class="print-section-title" id="printTitleSkipWeeks">Planning Period &amp; Skipped Weeks</div>
     <div id="crossYearBox" style="background:#e8f0fe;border:1px solid #b0c4de;border-radius:8px;padding:10px 12px;margin-top:12px;">
       <div style="display:flex;align-items:center;">
@@ -550,6 +537,7 @@ select {
       <button type="button" id="addCustomSkipBtn" onclick="addCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
       <p id="customSkipCount" style="font-size:0.75em;color:#999;text-align:center;margin:4px 0 0;display:none;"></p>
     </div>
+    <p class="gp-not-official gp-not-official-static"></p>
     <div class="de-box">
       <div class="print-section-title" id="printTitleDE">Dual Enrollment</div>
       <div class="de-toggle">
@@ -593,6 +581,7 @@ select {
           </div>
           <label for="de1Credits" id="labelDe1Credits">How many high school credits will you earn from this class?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="de1Credits">
+          <p class="gp-not-official gp-not-official-static"></p>
         </div>
         <button type="button" id="addDE2Btn" onclick="showDeClass2()" style="width:100%;padding:8px 12px;margin-top:8px;margin-bottom:8px;border:1px dashed #c8a96e;background:#fff8ec;border-radius:6px;cursor:pointer;font-size:0.9em;color:#8b6914;font-weight:bold;">+ Add a second dual-enrollment class</button>
         <div class="de-class-box" id="deClass2Box">
@@ -634,6 +623,7 @@ select {
           </div>
           <label for="de2Credits" id="labelDe2Credits">How many high school credits will you earn from this class?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="de2Credits">
+          <p class="gp-not-official gp-not-official-static"></p>
         </div>
       </div>
     </div>
@@ -680,6 +670,7 @@ select {
           </div>
           <label for="op1Credits" id="labelOp1Credits">How many high school credits will you earn from this program?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="op1Credits">
+          <p class="gp-not-official gp-not-official-static"></p>
         </div>
         <button type="button" id="addOP2Btn" onclick="showOpProgram2()" style="width:100%;padding:8px 12px;margin-top:8px;margin-bottom:8px;border:1px dashed #c62828;background:#fff0f3;border-radius:6px;cursor:pointer;font-size:0.9em;color:#c62828;font-weight:bold;">+ Add a second outside program</button>
         <div class="de-class-box" id="opClass2Box" style="display:none;">
@@ -721,6 +712,7 @@ select {
           </div>
           <label for="op2Credits" id="labelOp2Credits">How many high school credits will you earn from this program?</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="op2Credits">
+          <p class="gp-not-official gp-not-official-static"></p>
         </div>
       </div>
     </div>
@@ -730,6 +722,7 @@ select {
     <div class="result-section">
       <div class="print-section-title" id="printTitleResult">Credit Plan Summary</div>
       <div class="output" id="result"></div>
+      <p class="gp-not-official gp-not-official-static"></p>
     </div>
     <div class="plan-buttons" id="planButtons" style="display: none;">
       <button onclick="generatePlan('C')">&#x1F7E2; Open Plan A</button>
@@ -740,6 +733,7 @@ select {
     <div class="footer-disclaimer" id="footerDisclaimer">
       <strong>Disclaimer:</strong> This is not an official school document. This calculator is a helpful planning tool, but it's important to double-check your credit totals and the number of weeks you have. If you're not sure, talk with your teacher or school counselor to go over your plan.
     </div>
+    <p class="gp-not-official gp-not-official-static"></p>
   </div>
 </div>
 
@@ -3365,11 +3359,8 @@ function displayCurrentDateAndWeek(preserveStartWeek) {
   if (weekEl) weekEl.textContent = label;
 
   // Populate the FERPA-safe repeating print footer's date (no PII).
-  const footerDateEl = document.getElementById("printFooterDate");
-  if (footerDateEl) {
-    const shortOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    footerDateEl.textContent = today.toLocaleDateString(isSpanish ? "es-ES" : "en-US", shortOptions);
-  }
+  // Refresh the static print-only disclaimer lines (date + language)
+  updateStaticPrintDisclaims();
 }
 
 // =====================================================
@@ -3507,10 +3498,7 @@ function applyTranslations() {
   if (printTipEl) printTipEl.innerHTML = isSpanish
     ? 'Consejo: Para páginas numeradas, active &ldquo;Encabezados y pies de página&rdquo; en el diálogo de impresión de su navegador.'
     : 'Tip: For numbered pages, turn on &ldquo;Headers and footers&rdquo; in your browser&rsquo;s print dialog.';
-  const printFooterTextEl = document.getElementById('printRunningFooterText');
-  if (printFooterTextEl) printFooterTextEl.textContent = isSpanish
-    ? 'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso '
-    : 'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed ';
+  updateStaticPrintDisclaims();
   const printTitleSkipEl = document.getElementById('printTitleSkipWeeks');
   if (printTitleSkipEl) printTitleSkipEl.innerHTML = isSpanish ? 'Período de Planificación y Semanas Omitidas' : 'Planning Period &amp; Skipped Weeks';
   const printTitleDeEl = document.getElementById('printTitleDE');
@@ -4166,12 +4154,23 @@ function gpDePlaceToggleHtml(count,eff){
 // Not-official disclaimer line with today's date — repeated after every
 // option box in the planner (under each -Or- divider and after the last
 // box), so any option screenshotted or printed alone still carries it.
-function gpDisclaimerHtml(){
+function gpDisclaimerText(){
   const d=new Date().toLocaleDateString(isSpanish?'es-ES':'en-US',{year:'numeric',month:'long',day:'numeric'});
-  return '<p class="gp-not-official">'+(isSpanish
+  return isSpanish
     ?'NO ES UN DOCUMENTO OFICIAL DE LA ESCUELA — solo una herramienta de planificación · impreso '+d
-    :'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed '+d)
-    +'</p>';
+    :'NOT AN OFFICIAL SCHOOL DOCUMENT — planning tool only · printed '+d;
+}
+function gpDisclaimerHtml(){
+  return '<p class="gp-not-official">'+gpDisclaimerText()+'</p>';
+}
+// Fill the STATIC print-only disclaimer lines placed at the end of each
+// calculator print section (the planner's lines are built dynamically).
+// Cross-browser replacement for the old position:fixed footer, which
+// Safari does not repeat on printed pages.
+function updateStaticPrintDisclaims(){
+  document.querySelectorAll('.gp-not-official-static').forEach(function(el){
+    el.innerHTML=gpDisclaimerText();
+  });
 }
 // -Or- divider with the disclaimer line tucked underneath it
 function gpOrDividerHtml(){
