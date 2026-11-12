@@ -5115,7 +5115,7 @@ function __creditFillerApp(CF) {
         // finish it first (a lighter week) instead of starting a long Core that would block it.
         const me = runOf(list, i0, sl.wk.w);
         const es = Object.values(streams).find(x => x.kind === 'elective' && x.cur != null && avail(x.cur) > 0);
-        if (me.gap && es) {
+        if (me.gap && es && !(byId(es.cur).star && breakWeeks.some(w => w > sl.wk.w))) {
           const er = runOf(es.slots, 0, sl.wk.w);
           const need = avail(es.cur);
           if (need > er.run && need <= er.run + me.run) return null;
@@ -5130,7 +5130,11 @@ function __creditFillerApp(CF) {
         const lastAct = Object.keys(actIdx).length - 1;
         const gapAhead = q < list.length || (prev != null && lastAct - prev > MAX_APART);
         if (gapAhead && run <= 3) {
-          const short = cands.filter(c => avail(c.id) <= run);
+          // A ⭐ elective is fine to start if a break week comes right after: it simply carries on during the break.
+          const lastW = list[Math.max(i0, q - 1)] ? list[Math.max(i0, q - 1)].wk.w : sl.wk.w;
+          const nb = breakWeeks.find(w => w > lastW);
+          const breakNext = nb != null && !weeks.some(x => x.w > lastW && x.w < nb && !x.skip && x.credits > 0);
+          const short = cands.filter(c => avail(c.id) <= run || (breakNext && c.star));
           if (short.length) cands = short;
           else if (Object.values(streams).some(x => x.kind === 'core' && x.cur != null && avail(x.cur) > 0)) return null;
         }
@@ -5173,6 +5177,7 @@ function __creditFillerApp(CF) {
     const isFree = st => st.cur == null || rem[st.cur] <= 0;
     const curIsElective = st => !isFree(st) && kindOf(byId(st.cur)) === 'elective';
     let lastDoneKind = null;
+    const brkTouched = new Set();   // courses worked on during a break week
     const inProg = st => (st.cur != null && avail(st.cur) > 0) ? st.cur : (st.paused.find(x => avail(x) > 0) ?? null);
     function coreBusy() { for (const st of Object.values(streams)) if (st.kind === 'core') { const id = inProg(st); if (id != null) return id; } return null; }
     function ensureStream(k) { const key = k + '0'; if (!streams[key]) streams[key] = { slots: [], cur: null, paused: [], kind: k }; return key; }
@@ -5180,7 +5185,8 @@ function __creditFillerApp(CF) {
       let k = forced;
       if (!k) {
         if (coreBusy() != null) k = 'core';                              // never interrupt a Core
-        else if (streams.elective0 && inProg(streams.elective0) != null) k = 'elective';   // finish the elective in progress
+        else if (streams.elective0 && inProg(streams.elective0) != null && !(brkTouched.has(inProg(streams.elective0)) && breakWeeks.some(w => w > sl.wk.w) && courses.some(c => kindOf(c) === 'core' && avail(c.id) > 0 && !claimed.has(c.id)))) k = 'elective';   // finish the elective in progress (an elective worked during a break waits for the next break while Cores remain)
+        else if (streams.elective0 && inProg(streams.elective0) != null) k = 'core';
         else {
           const has = kk => courses.some(c => kindOf(c) === kk && rem[c.id] > 0 && !claimed.has(c.id));
           k = lastDoneKind === 'core' ? 'elective' : 'core';             // take turns course by course
@@ -5245,7 +5251,7 @@ function __creditFillerApp(CF) {
       if (sl.kind === 'break') {
         const bc = breakPick(sl);
         if (pins[sl.wk.w] == null) { breakAhead--; }
-        if (bc) { const fromReserve = avail(bc.id) <= 0; put(sl, bc); if (fromReserve && reserve[bc.id] > 0) reserve[bc.id]--; syncReserve(); finishIfDone(bc); return; }
+        if (bc) { brkTouched.add(bc.id); const fromReserve = avail(bc.id) <= 0; put(sl, bc); if (fromReserve && reserve[bc.id] > 0) reserve[bc.id]--; syncReserve(); finishIfDone(bc); return; }
         syncReserve();
         resolveFlex(sl);                                  // no ⭐ courses left: plan the week normally
       }
