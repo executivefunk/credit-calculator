@@ -380,6 +380,8 @@ select {
   }
   /* Long containers must be allowed to break across pages. */
   .de-box, .op-box, #crossYearBox, #crossYearInner, .grad-planner,
+  .break-notice { background: #fff8e1; border: 1px solid #ffd77a; border-radius: 8px; padding: 8px 10px; font-size: 0.85em; color: #5d4300; margin: 10px 0 0; line-height: 1.35; }
+  .break-notice b.closed { color: #b71c1c; }
   .holiday-box, #currentYearSkipBox, #nextYearSkipBox, .result-section {
     page-break-inside: auto !important;
     break-inside: auto !important;
@@ -512,13 +514,18 @@ select {
             <label for="nextYearSkipThanksgiving" id="labelNextYearThanksgiving">Skip Thanksgiving Week (Week 22)</label>
           </div>
           <div class="holiday-option">
-            <input type="checkbox" id="nextYearSkipWinter">
-            <label for="nextYearSkipWinter" id="labelNextYearWinter">Skip Winter Break (Weeks 26–27)</label>
+            <input type="checkbox" id="nextYearSkipWinter" checked disabled>
+            <label for="nextYearSkipWinter" id="labelNextYearWinter">Winter Break (Weeks 26–27) – School closed, always skipped</label>
           </div>
           <div class="holiday-option">
             <input type="checkbox" id="nextYearSkipSpring">
             <label for="nextYearSkipSpring" id="labelNextYearSpring">Skip Spring Week (Week 41)</label>
           </div>
+          <div class="holiday-option">
+            <input type="checkbox" id="nextYearSkipSummer">
+            <label for="nextYearSkipSummer" id="labelNextYearSummer">Skip Summer Weeks (Weeks 50–52)</label>
+          </div>
+          <p class="break-notice" id="breakNoticeNext"></p>
           <hr style="margin: 10px 0;">
           <div id="nextYearCustomSkipContainer"></div>
           <button type="button" id="addNextYearCustomSkipBtn" onclick="addNextYearCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
@@ -538,13 +545,18 @@ select {
         <label for="skipThanksgiving" id="labelThanksgiving">Skip Thanksgiving Week (Week 22)</label>
       </div>
       <div class="holiday-option" id="winterOption">
-        <input type="checkbox" id="skipWinter">
-        <label for="skipWinter" id="labelWinter">Skip Winter Break (Weeks 26–27)</label>
+        <input type="checkbox" id="skipWinter" checked disabled>
+        <label for="skipWinter" id="labelWinter">Winter Break (Weeks 26–27) – School closed, always skipped</label>
       </div>
       <div class="holiday-option" id="springOption">
         <input type="checkbox" id="skipSpring">
         <label for="skipSpring" id="labelSpring">Skip Spring Week (Week 41)</label>
       </div>
+      <div class="holiday-option" id="summerOption">
+        <input type="checkbox" id="skipSummer">
+        <label for="skipSummer" id="labelSummer">Skip Summer Weeks (Weeks 50–52)</label>
+      </div>
+      <p class="break-notice" id="breakNotice"></p>
       <hr id="customSkipDivider" style="margin: 10px 0;">
       <div id="customSkipContainer"></div>
       <button type="button" id="addCustomSkipBtn" onclick="addCustomSkipWeek()" style="margin-top:6px;padding:6px 12px;font-size:0.85em;cursor:pointer;background:#fff;border:1px dashed #999;border-radius:6px;color:#555;width:100%;">+ Add a custom week to skip</button>
@@ -763,6 +775,23 @@ try {
 }
 
 // =====================================================
+// BREAK WEEKS
+// Thanksgiving (Week 22), Spring (Week 41) and Summer (the last three weeks
+// of the school year, until July 1) have LIMITED teacher appointments.
+// Winter Break (Weeks 26-27) is the only break where school is CLOSED, so it
+// is always skipped. Change the week numbers here if the calendar changes.
+// =====================================================
+const BREAK_WEEKS = { thanksgiving: 22, winter: [26, 27], spring: 41, summerLength: 3 };
+function getBreakInfo(week, totalWeeks) {
+  if (week === BREAK_WEEKS.thanksgiving) return { kind: 'limited', key: 'thanksgiving', name: 'Thanksgiving Week', nameES: 'Semana de Acci\u00f3n de Gracias' };
+  if (BREAK_WEEKS.winter.indexOf(week) >= 0) return { kind: 'closed', key: 'winter', name: 'Winter Break', nameES: 'Vacaciones de invierno' };
+  if (week === BREAK_WEEKS.spring) return { kind: 'limited', key: 'spring', name: 'Spring Week', nameES: 'Semana de primavera' };
+  if (totalWeeks && week > totalWeeks - BREAK_WEEKS.summerLength) return { kind: 'limited', key: 'summer', name: 'Summer', nameES: 'Verano' };
+  return null;
+}
+function getSummerWeeks(totalWeeks) { const out = []; for (let w = totalWeeks - BREAK_WEEKS.summerLength + 1; w <= totalWeeks; w++) out.push(w); return out; }
+
+// =====================================================
 // DATE GENERATION ENGINE
 // =====================================================
 function generateSchoolYear(year) {
@@ -841,8 +870,6 @@ function generateSchoolYear(year) {
 
   // Milestone annotations by fixed week number
   const milestones = {
-    26: { en: '(Winter Break)', es: '(Vacaciones de invierno)' },
-    27: { en: '(Winter Break)', es: '(Vacaciones de invierno)' },
     30: { en: '- End of Semester 1', es: '- Fin del semestre 1' },
     46: { graduation: true }
   };
@@ -880,6 +907,12 @@ function generateSchoolYear(year) {
         labelEN += ' ' + ms.en;
         labelES += ' ' + ms.es;
       }
+    }
+    // Break weeks: limited teacher appointments, or school closed (Winter Break)
+    const bi = getBreakInfo(weekNum, lastWeekNum);
+    if (bi) {
+      labelEN += ' (' + bi.name + ' \u2013 ' + (bi.kind === 'closed' ? 'School closed' : 'Limited teacher appointments') + ')';
+      labelES += ' (' + bi.nameES + ' \u2013 ' + (bi.kind === 'closed' ? 'Escuela cerrada' : 'Citas limitadas con maestros') + ')';
     }
     // End of Semester 2 on the last week
     if (weekNum === lastWeekNum) {
@@ -952,6 +985,7 @@ function switchYear(mode) {
   populateWeekDropdowns();
   document.getElementById("endWeek").value = String(getDefaultFinishWeek());
   displayCurrentDateAndWeek();
+  updateBreakNotices();
 
   // Update Week 1 partial checkbox for new year
   updateWeek1Partial();
@@ -963,8 +997,9 @@ function switchYear(mode) {
   // Clear results and inputs
   document.getElementById("totalCredits").value = "";
   document.getElementById("skipThanksgiving").checked = false;
-  document.getElementById("skipWinter").checked = false;
+  document.getElementById("skipWinter").checked = true;   // school closed: always skipped
   document.getElementById("skipSpring").checked = false;
+  document.getElementById("skipSummer").checked = false;
   resetUserToggledSkips();
   clearCustomSkipWeeks();
   // Reset/rebuild the cross-year controls BEFORE the DE/OP dropdowns,
@@ -1118,6 +1153,7 @@ const translations = {
   "Which week do you want to finish by?": "\u00bfEn qu\u00e9 semana quieres terminar?",
   "Skip Thanksgiving Week (Week 22)": "Saltar semana - Acci\u00f3n de Gracias (Semana 22)",
   "Skip Winter Break (Weeks 26\u201327)": "Saltar vacaciones - Invierno (Semanas 26\u201327)",
+  "Winter Break (Weeks 26\u201327) \u2013 School closed, always skipped": "Vacaciones de invierno (Semanas 26\u201327) \u2013 Escuela cerrada, siempre se salta",
   "Skip Spring Week (Week 41)": "Saltar semana - Primavera (Semana 41)",
   "Calculate": "Calcular",
   "Disclaimer:": "Aviso:",
@@ -1179,8 +1215,9 @@ function showLanguagePrompt() {
     document.getElementById("startWeek").selectedIndex = 0;
     document.getElementById("endWeek").selectedIndex = 0;
     document.getElementById("skipThanksgiving").checked = false;
-    document.getElementById("skipWinter").checked = false;
+    document.getElementById("skipWinter").checked = true;   // school closed: always skipped
     document.getElementById("skipSpring").checked = false;
+    document.getElementById("skipSummer").checked = false;
     resetUserToggledSkips();
     clearCustomSkipWeeks();
     resetDualEnrollment();
@@ -1330,6 +1367,8 @@ function updateCustomSkipVisibility() {
   if (thx) thx.style.display = startWeek > 22 ? 'none' : '';
   if (wnt) wnt.style.display = startWeek > 27 ? 'none' : '';
   if (spr) spr.style.display = startWeek > 41 ? 'none' : '';
+  const smr = document.getElementById('summerOption');
+  if (smr && schoolYearData) smr.style.display = startWeek > schoolYearData.totalWeeks ? 'none' : '';
   // Re-evaluate Week 1 (which also depends on startWeek)
   updateWeek1Partial();
 }
@@ -1550,10 +1589,12 @@ function resetCrossYear() {
     selNext.value = String(Math.min(46, selNext.options.length));
   }
   // Reset next-year skip checkboxes
-  ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipWinter", "nextYearSkipSpring"].forEach(function(id) {
+  ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipSpring", "nextYearSkipSummer"].forEach(function(id) {
     const cb = document.getElementById(id);
     if (cb) cb.checked = false;
   });
+  const nyWinter = document.getElementById("nextYearSkipWinter");
+  if (nyWinter) nyWinter.checked = true;   // school closed: always skipped
   clearNextYearCustomSkipWeeks();
   const w1opt = document.getElementById("nextYearWeek1PartialOption");
   if (w1opt) w1opt.style.display = "none";
@@ -1608,13 +1649,34 @@ function populateNextYearCustomSkipDropdowns() {
   });
 }
 
+// Summer skip labels + the "limited teacher appointments" notices (both languages)
+function updateBreakNotices() {
+  const total = schoolYearData ? schoolYearData.totalWeeks : 52;
+  const sw = getSummerWeeks(total);
+  const nextTotal = generateSchoolYear((activeStartYear || getCurrentSchoolYear()) + 1).totalWeeks;
+  const swNext = getSummerWeeks(nextTotal);
+  const range = a => a[0] + '\u2013' + a[a.length - 1];
+  const lbl = document.getElementById('labelSummer');
+  if (lbl) lbl.textContent = isSpanish ? 'Saltar semanas de verano (Semanas ' + range(sw) + ')' : 'Skip Summer Weeks (Weeks ' + range(sw) + ')';
+  const lblN = document.getElementById('labelNextYearSummer');
+  if (lblN) lblN.textContent = isSpanish ? 'Saltar semanas de verano (Semanas ' + range(swNext) + ')' : 'Skip Summer Weeks (Weeks ' + range(swNext) + ')';
+  const lblW = document.getElementById('labelWinter');
+  if (lblW) lblW.textContent = isSpanish ? 'Vacaciones de invierno (Semanas 26\u201327) \u2013 Escuela cerrada, siempre se salta' : 'Winter Break (Weeks 26\u201327) \u2013 School closed, always skipped';
+  const notice = (s) => isSpanish
+    ? '<b>Nota:</b> La semana de Acci\u00f3n de Gracias (Semana 22), la semana de primavera (Semana 41) y las semanas de verano (Semanas ' + range(s) + ') tienen <b>citas limitadas con maestros</b>. Es posible que no haya apoyo de maestros todos los d\u00edas. Durante las vacaciones de invierno (Semanas 26\u201327) <b class="closed">la escuela est\u00e1 cerrada</b>.'
+    : '<b>Heads up:</b> Thanksgiving week (Week 22), Spring week (Week 41) and the Summer weeks (Weeks ' + range(s) + ') have <b>limited teacher appointments available</b>. Teacher support may not be available every day. During Winter Break (Weeks 26\u201327) <b class="closed">school is closed</b>.';
+  const n1 = document.getElementById('breakNotice'); if (n1) n1.innerHTML = notice(sw);
+  const n2 = document.getElementById('breakNoticeNext'); if (n2) n2.innerHTML = notice(swNext);
+}
+
 function updateNextYearSkipLabels() {
   const lblT = document.getElementById("labelNextYearThanksgiving");
   const lblW = document.getElementById("labelNextYearWinter");
   const lblS = document.getElementById("labelNextYearSpring");
   const lblTitle = document.getElementById("nextYearSkipTitle");
   if (lblT) lblT.textContent = isSpanish ? "Saltar semana - Acción de Gracias (Semana 22)" : "Skip Thanksgiving Week (Week 22)";
-  if (lblW) lblW.textContent = isSpanish ? "Saltar vacaciones - Invierno (Semanas 26–27)" : "Skip Winter Break (Weeks 26–27)";
+  if (lblW) lblW.textContent = isSpanish ? "Vacaciones de invierno (Semanas 26–27) – Escuela cerrada, siempre se salta" : "Winter Break (Weeks 26–27) – School closed, always skipped";
+  updateBreakNotices();
   if (lblS) lblS.textContent = isSpanish ? "Saltar semana - Primavera (Semana 41)" : "Skip Spring Week (Week 41)";
   if (lblTitle) lblTitle.innerHTML = isSpanish
     ? 'Semanas que planeas saltar — <span style="color:#b71c1c;">Próximo Año Escolar</span> (Opcional):'
@@ -2291,6 +2353,14 @@ function autoSetHealthySkips() {
     const nextCustom = getNextYearCustomSkipWeeks();
     baselineSkips += (nextW1 ? 1 : 0) + nextCustom.length;
   }
+  // Winter Break is always skipped (school closed), and checked Summer weeks
+  // are skipped too, so neither is part of the holiday budget below.
+  const inPlan = w => w >= startWeek && w <= endWeek;
+  BREAK_WEEKS.winter.forEach(w => { if (inPlan(w)) baselineSkips++; if (crossYearData.active && inPlan(totalCurrent + w)) baselineSkips++; });
+  if (document.getElementById('skipSummer')?.checked) getSummerWeeks(schoolYearData.totalWeeks).forEach(w => { if (inPlan(w)) baselineSkips++; });
+  if (crossYearData.active && document.getElementById('nextYearSkipSummer')?.checked) {
+    getSummerWeeks(buildExtendedMap(crossYearData).totalNext).forEach(w => { if (inPlan(totalCurrent + w)) baselineSkips++; });
+  }
 
   // Slack in weeks: usable weeks (without any holidays subtracted) minus
   // the minimum weeks required to fit the target at the sustainable cap.
@@ -2313,10 +2383,6 @@ function autoSetHealthySkips() {
   // current year is preferred over next year so the student gets the
   // sooner relief first.
   const candidates = [
-    { id: 'skipWinter',               key: 'winter',              weeks: 2,
-      applicable: inRange(26, false) && inRange(27, false) },
-    { id: 'nextYearSkipWinter',       key: 'nextYearWinter',      weeks: 2,
-      applicable: crossYearData.active && inRange(26, true) && inRange(27, true) },
     { id: 'skipThanksgiving',         key: 'thanksgiving',        weeks: 1,
       applicable: inRange(22, false) },
     { id: 'nextYearSkipThanksgiving', key: 'nextYearThanksgiving', weeks: 1,
@@ -2372,7 +2438,7 @@ function calculateCredits() {
   autoSetHealthySkips();
 
   const skipThanksgiving = document.getElementById("skipThanksgiving").checked;
-  const skipWinter = document.getElementById("skipWinter").checked;
+  const skipWinter = true;   // Winter Break: school closed, always skipped
   const skipSpring = document.getElementById("skipSpring").checked;
 
   // Cross-year: extend endWeek into next year
@@ -2396,6 +2462,7 @@ function calculateCredits() {
     ...(skipThanksgiving ? [22] : []),
     ...(skipWinter ? [26, 27] : []),
     ...(skipSpring ? [41] : []),
+    ...(document.getElementById("skipSummer")?.checked ? getSummerWeeks(schoolYearData.totalWeeks) : []),
     ...customSkips
   ];
   // For cross-year: read next-year skip checkboxes
@@ -2406,8 +2473,9 @@ function calculateCredits() {
     if (nextYearSkipW1) allSkips.push(tc + 1);
     // Next year's holiday skips
     if (document.getElementById("nextYearSkipThanksgiving")?.checked) allSkips.push(tc + 22);
-    if (document.getElementById("nextYearSkipWinter")?.checked) { allSkips.push(tc + 26); allSkips.push(tc + 27); }
+    allSkips.push(tc + 26); allSkips.push(tc + 27);   // Winter Break: school closed, always skipped
     if (document.getElementById("nextYearSkipSpring")?.checked) allSkips.push(tc + 41);
+    if (document.getElementById("nextYearSkipSummer")?.checked) getSummerWeeks(extMap.totalNext).forEach(function(w) { allSkips.push(tc + w); });
     // Next year's custom skips
     const nextYearCustSkips = getNextYearCustomSkipWeeks();
     nextYearCustSkips.forEach(function(val) { allSkips.push(tc + val); });
@@ -2944,7 +3012,7 @@ function generatePlan(type) {
   });
 
   const printWin = window.open("", "_blank");
-  const maxPerWeek = 3;
+  const maxPerWeek = 4;
 
   function formatDateForCell(str) {
     const paren = str.match(/^(.*?)(\s*\((.+)\))$/);
@@ -2980,6 +3048,18 @@ function generatePlan(type) {
   const nextYearLabel = isCrossYear ? extMap.nextYearLabel : '';
   let insertedDivider = false;
 
+  // Week info for the credit-filling tool (break weeks, dates, display labels)
+  const cfWeeks = {};
+  const stripBreakNote = str => (str || '').replace(/\s*\((Thanksgiving Week|Winter Break|Spring Week|Summer) \u2013 [^)]*\)/, '');
+  allWeeks.forEach((w) => {
+    const tot = w.isCurrentYear ? totalCurrent : (extMap ? extMap.totalNext : totalCurrent);
+    const bi = getBreakInfo(w.actualWeek, tot);
+    const core = stripBreakNote(planDateRanges[w.week]).replace(/\s*\(.*$/, '').replace(/\s*-\s*End of Semester.*$/i, '').trim();
+    const pr = core.split(' - ');
+    cfWeeks[w.week] = { bi: bi ? { kind: bi.kind, key: bi.key, name: bi.name } : null, range: core, start: pr[0], end: pr[1] || pr[0],
+      disp: String(w.actualWeek) + ((isCrossYear && !w.isCurrentYear) ? ' (' + nextYearLabel + ')' : '') };
+  });
+
   let rows = [];
   allWeeks.forEach((w) => {
     // Insert year divider before first next-year week
@@ -2987,7 +3067,8 @@ function generatePlan(type) {
       rows.push('<tr class="year-divider"><td colspan="5" style="background:#b0c4de;color:#1a3a5c;font-weight:bold;text-align:center;padding:8px;font-size:1em;">' + nextYearLabel + '</td></tr>');
       insertedDivider = true;
     }
-    const rowClass = (w.skip || w.softSkip) ? ' class="skip-row"' : '';
+    const cfBi = cfWeeks[w.week].bi;
+    const rowClass = (w.skip || w.softSkip) ? ' class="skip-row"' : ((cfBi && cfBi.kind === 'limited') ? ' class="cf-limited-row"' : '');
     // DE highlight goes on the date cell only
     let dateCellClass = 'col-date';
     if (w.inDE1 && w.inDE2) dateCellClass += ' de-both';
@@ -3008,7 +3089,7 @@ function generatePlan(type) {
       return '<label class="chk"><input type="checkbox" id="' + id + '" />' +
         '<span class="credit-field">' +
         '<input type="text" class="credit-line' + (assigned ? '' : ' extra-line') + '" id="' + id + '-txt" placeholder="' + (assigned ? i : '') + '" />' +
-        '<select class="subj-pick" onchange="var t=this.previousElementSibling;if(this.value===\'_custom\'){t.value=\'\';t.focus();}else if(this.value){t.value=this.value;}this.selectedIndex=0;">' +
+        '<select class="subj-pick" onchange="if(window.__subjPick){__subjPick(this);}else{var t=this.previousElementSibling;if(this.value===\'_custom\'){t.value=\'\';t.focus();}else if(this.value){t.value=this.value;}this.selectedIndex=0;}">' +
         '<option value="" disabled selected>▼</option>' +
         '<option value="English">English</option>' +
         '<option value="Math">Math</option>' +
@@ -3024,7 +3105,8 @@ function generatePlan(type) {
     var isRegularSkip = w.softSkip || skipWeeks.includes(w.week);
     rows.push('<tr' + rowClass + ' data-week="' + w.week + '" data-skip="' + (w.skip ? '1' : '0') + '" data-soft-skip="' + (w.softSkip ? '1' : '0') + '" data-base-skip="' + (isRegularSkip ? '1' : '0') + '" data-de1="' + (w.inDE1 ? '1' : '0') + '" data-de2="' + (w.inDE2 ? '1' : '0') + '" data-op1="' + (w.inOP1 ? '1' : '0') + '" data-op2="' + (w.inOP2 ? '1' : '0') + '">' +
       '<td class="col-week">' + displayWeek + '</td>' +
-      '<td class="' + dateCellClass + '">' + formatDateForCell(planDateRanges[w.week] || '') + '</td>' +
+      '<td class="' + dateCellClass + '">' + formatDateForCell(stripBreakNote(planDateRanges[w.week] || '')) +
+        (cfBi ? '<span class="cf-tag ' + cfBi.kind + '">' + cfBi.name + ' \u00b7 ' + (cfBi.kind === 'closed' ? 'School closed' : 'Limited teacher appointments') + '</span>' : '') + '</td>' +
       '<td class="col-credits"><strong class="val">' + w.credits + '</strong></td>' +
       '<td class="controls col-adjust">' + controls + '</td>' +
       '<td class="col-progress"><div class="progress-grid">' + boxes + '</div></td></tr>');
@@ -3137,12 +3219,12 @@ function generatePlan(type) {
   '@supports (-webkit-touch-callout: none) { .page-cut { height: 0.3in !important; } }' +
   'table.planner thead { display: table-header-group !important; page-break-inside: avoid !important; break-inside: avoid !important; }' +
   'table.planner tbody { page-break-inside: auto !important; break-inside: auto !important; } }' +
-  '</style></head><body>' +
+  '</style><style>' + CF_POPUP_PARTS.css + '</style></head><body>' +
   '<div class="popup-actions"><button id="printBtn" onclick="window.print()">Print</button></div>' +
   '<div class="topbar"><div class="summarywrap">' +
   '<div class="summarybar"><span class="badge badge-lg">Target: <strong id="tgt">' + C + '</strong></span><span class="badge badge-lg">Assigned: <strong id="asgn">0</strong></span></div>' +
   '<div class="summarybar" style="margin-top:6px;"><span class="badge badge-lg">Remaining: <strong id="rem">0</strong></span></div>' +
-  '<div class="summarybar" style="margin-top:6px;"><span class="badge">0s: <strong id="c0">0</strong></span><span class="badge">1s: <strong id="c1">0</strong></span><span class="badge">2s: <strong id="c2">0</strong></span><span class="badge">3s: <strong id="c3">0</strong></span>' +
+  '<div class="summarybar" style="margin-top:6px;"><span class="badge">0s: <strong id="c0">0</strong></span><span class="badge">1s: <strong id="c1">0</strong></span><span class="badge">2s: <strong id="c2">0</strong></span><span class="badge">3s: <strong id="c3">0</strong></span><span class="badge">4s: <strong id="c4">0</strong></span>' +
   '</div>' +
   (function() {
     function popupDeRange(de) {
@@ -3188,7 +3270,9 @@ function generatePlan(type) {
   '<h2 style="margin-bottom:2px;">Credit Tracker \u2013 Plan ' + displayType + ' (' + yearLabel + (isCrossYear ? ' + ' + nextYearLabel : '') + ')</h2>' +
   '<p style="margin:0 0 2px; font-size:0.85em; color:#555;">(Credit completion is allowed during self-selected "0" credit weeks.)</p>' +
   '<p style="margin:0 0 10px; font-size:0.85em; color:#555;">Plan created on: ' + formatEmailDate() + '</p>' +
+  CF_POPUP_PARTS.panel + CF_POPUP_PARTS.legend +
   tablesHtml +
+  CF_POPUP_PARTS.timeline +
   '<p class="notes" style="margin-top:10px; font-size:0.95em; color:#555;">Notes: Skip weeks are locked at 0.' + (isWeek1Partial ? ' Week 1 is a partial week (highlighted in red, starts at 0 credits) \u2014 you may optionally add bonus credits using +/\u2013.' : '') + ' Per-week limit is ' + maxPerWeek + '. The table won\'t let you exceed your total target credits (' + C + ').</p>' +
   '</body></html>';
 
@@ -3204,9 +3288,9 @@ function generatePlan(type) {
     // Keep each row's numbered lines in sync with its credit value, so using
     // +/- (or a DE toggle that redistributes credits) renumbers the lines too.
     'function renumberRow(tr) { var valEl = tr.querySelector(".val"); if(!valEl) return; var v = parseInt(valEl.textContent) || 0; var lines = tr.querySelectorAll(".credit-line"); for(var i=0;i<lines.length;i++) { if(i < v) { lines[i].placeholder = String(i+1); lines[i].classList.remove("extra-line"); } else { lines[i].placeholder = ""; lines[i].classList.add("extra-line"); } } }' +
-    'function refreshSummary() { eachRow(renumberRow); var items = currentValues(); var nums = items.map(function(x){return x.v;}); var assigned = sum(nums); var rem = Math.max(0, target - assigned); var cnt = {0:0,1:0,2:0,3:0,4:0}; nums.forEach(function(n){ if(cnt[n]!==undefined) cnt[n]++; }); document.getElementById("asgn").textContent = assigned; document.getElementById("rem").textContent = rem; document.getElementById("c0").textContent = cnt[0]||0; document.getElementById("c1").textContent = cnt[1]||0; document.getElementById("c2").textContent = cnt[2]||0; document.getElementById("c3").textContent = cnt[3]||0; var c4El = document.getElementById("c4"); if(c4El) c4El.textContent = cnt[4]||0; }' +
+    'function refreshSummary() { eachRow(renumberRow); var items = currentValues(); var nums = items.map(function(x){return x.v;}); var assigned = sum(nums); var rem = Math.max(0, target - assigned); var cnt = {0:0,1:0,2:0,3:0,4:0}; nums.forEach(function(n){ if(cnt[n]!==undefined) cnt[n]++; }); document.getElementById("asgn").textContent = assigned; document.getElementById("rem").textContent = rem; document.getElementById("c0").textContent = cnt[0]||0; document.getElementById("c1").textContent = cnt[1]||0; document.getElementById("c2").textContent = cnt[2]||0; document.getElementById("c3").textContent = cnt[3]||0; var c4El = document.getElementById("c4"); if(c4El) c4El.textContent = cnt[4]||0; if(window.__cfPlanChanged) window.__cfPlanChanged(); }' +
     'function trySet(tr, newVal) { var skip = tr.getAttribute("data-skip") === "1"; if(skip) return; newVal = Math.max(0, Math.min(maxPerWeek, newVal)); var items = currentValues(); var old = parseInt(tr.querySelector(".val").textContent) || 0; var assignedNow = items.reduce(function(s,i){return s+i.v;},0); var assignedMinusOld = assignedNow - old; var room = Math.max(0, target - assignedMinusOld); if(newVal > room) newVal = room; tr.querySelector(".val").textContent = newVal; refreshSummary(); }' +
-    'tables.forEach(function(table) { table.addEventListener("click", function(e) { var btn = e.target.closest("button"); if(!btn) return; var tr = e.target.closest("tr"); var valEl = tr.querySelector(".val"); var v = parseInt(valEl.textContent) || 0; if(btn.classList.contains("plus")) trySet(tr, v + 1); if(btn.classList.contains("minus")) trySet(tr, v - 1); }); });' +
+    'tables.forEach(function(table) { table.addEventListener("click", function(e) { var btn = e.target.closest("button"); if(!btn) return; var tr = e.target.closest("tr"); var valEl = tr.querySelector(".val"); var v = parseInt(valEl.textContent) || 0; if(btn.classList.contains("plus")) { trySet(tr, v + 1); if((parseInt(valEl.textContent)||0) === v && tr.getAttribute("data-skip") !== "1" && window.__cfWarn) window.__cfWarn(v >= maxPerWeek ? "max" : "target", target); } if(btn.classList.contains("minus")) trySet(tr, v - 1); }); });' +
     'document.getElementById("btnClear").addEventListener("click", function() { eachRow(function(tr) { if(tr.getAttribute("data-skip") === "1") return; tr.querySelector(".val").textContent = "0"; }); refreshSummary(); });' +
     'document.getElementById("btnFill2").addEventListener("click", function() { var rows = currentValues().filter(function(i){return !i.skip;}); var assigned = rows.reduce(function(s,i){return s+i.v;},0); var room = Math.max(0, target - assigned); if(room <= 0) return; for(var idx=0;idx<rows.length;idx++) { var it = rows[idx]; while(it.v < Math.min(2, maxPerWeek) && room > 0) { it.v += 1; room -= 1; it.tr.querySelector(".val").textContent = it.v; } if(room <= 0) break; } refreshSummary(); });' +
     'document.getElementById("btnSpread1").addEventListener("click", function() { var rows = currentValues().filter(function(i){return !i.skip;}); var assigned = rows.reduce(function(s,i){return s+i.v;},0); var remaining = Math.max(0, target - assigned); if(remaining <= 0) return; var zeroIdxs = rows.map(function(it,idx){return {it:it,idx:idx};}).filter(function(x){return x.it.v===0;}).map(function(x){return x.idx;}); var toPlace = Math.min(remaining, zeroIdxs.length); for(var k=0;k<toPlace;k++) { var pos = Math.floor(k * zeroIdxs.length / toPlace); trySet(rows[zeroIdxs[pos]].tr, 1); } });' +
@@ -3304,8 +3388,12 @@ function generatePlan(type) {
   // one shot. Inline parsing guarantees the script runs AFTER the table rows,
   // so the listener-attachment code never runs against an empty/partial DOM —
   // which is what used to cause the popup to need a second open to work.
+  const cfConfig = JSON.stringify({ weeks: cfWeeks }).replace(/</g, '\\u003c');
+  const cfScript = '(function(){var start=function(){(' + __creditFillerApp.toString() + ')(' + cfConfig + ');};' +
+    'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",start);}else{start();}})();';
   const fullHtml = html.replace('</body></html>',
     '<' + 'script>' + behavior + '<' + '/script>' +
+    '<' + 'script>' + cfScript + '<' + '/script>' +
     '</body></html>');
 
   printWin.document.write(fullHtml);
@@ -3469,6 +3557,7 @@ function applyTranslations() {
   updateCustomSkipUI();
   updateNextYearCustomSkipUI();
 
+  updateBreakNotices();
   const skipBoxTitleEl = document.getElementById("skipBoxTitle");
   if (skipBoxTitleEl) skipBoxTitleEl.innerHTML = isSpanish
     ? 'Semanas que planeas saltar - <span style="color:#b71c1c;">Año Escolar Actual</span> (Opcional):'
@@ -4711,7 +4800,8 @@ function useCreditsInCalculator(credits,startWk,endWk,crossYear,endWkNext,deCur,
 // =====================================================
 // INITIALIZATION
 // =====================================================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => { try { updateBreakNotices(); } catch (e) {}
+  setTimeout(function(){ try { updateBreakNotices(); } catch (e) {} }, 0);
   // Initialize with current school year.
   // ORDER MATTERS: populateWeekDropdowns() sets a valid default finish
   // week, and populateCrossYearDropdown() must run before the DE/OP
@@ -4773,6 +4863,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Non-managed skip checkboxes (Week 1 partial — current and next year)
   document.getElementById("nextYearSkipWeek1Partial").addEventListener("change", calculateCredits);
   document.getElementById("skipWeek1Partial").addEventListener("change", calculateCredits);
+  document.getElementById("skipSummer").addEventListener("change", calculateCredits);
+  document.getElementById("nextYearSkipSummer").addEventListener("change", calculateCredits);
   // (Custom skip events are wired dynamically in addCustomSkipWeek / addNextYearCustomSkipWeek)
 
   // Auto-calculate: dual enrollment inputs
@@ -4814,6 +4906,821 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById(id).addEventListener("keydown", function(e) { if (e.key === "Enter") e.preventDefault(); });
   });
 });
+
+// =====================================================
+// CREDIT-FILLING TOOL (runs inside the Plan A / Plan B window)
+// =====================================================
+const CF_POPUP_PARTS = {"css": ":root { color-scheme: light; }\n.col-progress .chk { width: 100%; min-width: 0; } .col-progress .credit-field { flex: 1 1 auto; min-width: 0; } .credit-line { width: 100% !important; }\n@media print { .credit-line { width: 100% !important; } }\n\nbutton, input, select, textarea { color: #222; -webkit-text-fill-color: #222; }\ninput::placeholder, textarea::placeholder { color: #999; -webkit-text-fill-color: #999; }\n.controls button { background: #f0f0f0; border: 1px solid #b5b5b5; border-radius: 4px; cursor: pointer; font-size: 0.9rem; padding: 2px 9px !important; }\n.controls button:hover { background: #e2e2e2; } .controls button:active { background: #d5d5d5; }\n.topbar .tools button { background: #fff; border: 1px solid #888; border-radius: 6px; padding: 5px 9px; cursor: pointer; }\n.topbar .tools button:hover { background: #f0f0f0; }\ninput[type=checkbox], input[type=radio] { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin: 0 4px 0 0; border: 1.5px solid #000; background: #fff; display: inline-grid; place-content: center; vertical-align: middle; cursor: pointer; flex: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n.chk input[type=checkbox] { width: 14px !important; height: 14px !important; margin: 0; }\ninput[type=checkbox] { border-radius: 3px; } input[type=radio] { border-radius: 50%; }\ninput[type=checkbox]::before { content: \"\"; width: 9px; height: 9px; background: #fff; transform: scale(0); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }\ninput[type=radio]::before { content: \"\"; width: 8px; height: 8px; border-radius: 50%; background: #1a73e8; transform: scale(0); }\ninput[type=checkbox]:checked { background: #1a73e8; border-color: #1a73e8; } input[type=radio]:checked { border-color: #1a73e8; }\ninput[type=checkbox]:checked::before, input[type=radio]:checked::before { transform: scale(1); }\ninput[type=checkbox]:disabled { background: #f2f2f2; border-color: #b0b0b0; cursor: not-allowed; }\ntr.cf-limited-row td { background: #fff4d6; }\n.cf-tag { display: inline-block; font-size: 0.72rem; padding: 1px 7px; border-radius: 10px; margin-top: 3px; font-weight: bold; white-space: normal; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n.cf-tag.limited { background: #ffe08a; color: #6b4e00; } .cf-tag.closed { background: #ef9a9a; color: #7f0000; }\n.cf-tag.heavy { background: #ffe0b2; color: #8a4b00; } .cf-tag.light { background: #dcedc8; color: #33691e; }\n.credit-line.cf-auto { border-left: 4px solid var(--cfc, #1a73e8); background: #fafcff; padding-left: 3px; }\n.credit-line.cf-locked { border-left: 4px solid var(--cfc, #1a73e8); background: #fafcff; padding-left: 3px; font-weight: bold; }\n.credit-line.cf-long { font-size: 0.68rem; }\n.credit-line.cf-sel { background: #bbdefb !important; outline: 2px solid #1a73e8; }\nbody.cf-swapping .credit-line { cursor: pointer; }\nbody.cf-swapping .credit-line:hover { background: #e3f2fd; }\n.cf { font-size: 0.9rem; color: #222; text-align: left; }\n.cf h3 { font-size: 0.95rem; margin: 14px 0 6px; }\n.cf .muted { color: #666; font-size: 0.84rem; }\n.cf .btn { font: inherit; font-size: 0.85rem; border: 1px solid #555; background: #fff; border-radius: 6px; padding: 6px 11px; cursor: pointer; }\n.cf .btn:hover { background: #f0f0f0; }\n.cf .btn.primary { background: #1a73e8; color: #fff; -webkit-text-fill-color: #fff; border-color: #1a73e8; font-weight: bold; }\n.cf .btn.primary:hover { background: #155fc0; }\n.cf .btn.on { background: #e8f0fe; border-color: #1a73e8; color: #123c8c; -webkit-text-fill-color: #123c8c; font-weight: bold; }\n.cf .btn.small { padding: 2px 7px; font-size: 0.78rem; }\n.cf .btn.link { border: none; background: none; color: #c62828; -webkit-text-fill-color: #c62828; padding: 2px 4px; }\n.cf .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }\n.cf .scroll { overflow-x: auto; }\n.cf input[type=text], .cf input[type=number], .cf select, .cf textarea { font: inherit; font-size: 0.88rem; padding: 5px 6px; border: 1px solid #c4c9d0; border-radius: 6px; background: #fff; box-sizing: border-box; }\ndetails.cf-panel { border: 2px solid #1a73e8; border-radius: 10px; background: #f7faff; margin: 10px 0 12px; }\ndetails.cf-panel > summary { cursor: pointer; padding: 10px 14px; font-weight: bold; font-size: 1rem; color: #123c8c; list-style: none; }\ndetails.cf-panel > summary::-webkit-details-marker { display: none; }\ndetails.cf-panel > summary::before { content: \"\\25B6  \"; font-size: 0.8em; }\ndetails.cf-panel[open] > summary::before { content: \"\\25BC  \"; }\n.cf-panel .panel-body { padding: 0 14px 14px; }\n.cf .pattern { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 8px; font-size: 0.88rem; }\n.cf .pattern label { font-weight: bold; font-size: 0.82rem; margin-right: 4px; }\n.cf .radios { margin-top: 8px; font-size: 0.86rem; display: flex; flex-direction: column; gap: 4px; }\n.cf .radios label { cursor: pointer; }\n.cf .example { margin-top: 8px; background: #fff; border: 1px dashed #b0bec5; border-radius: 8px; padding: 7px 10px; font-size: 0.84rem; color: #37474f; }\n.cf table.courses { border-collapse: collapse; width: 100%; min-width: 760px; background: #fff; table-layout: auto; margin: 0; }\n.cf table.courses th, .cf table.courses td { border: 1px solid #dde1e6; padding: 5px 6px; font-size: 0.85rem; text-align: left; vertical-align: middle; }\n.cf table.courses th { background: #eef2f7; font-size: 0.78rem; }\n.cf table.courses td.c, .cf table.courses th.c { text-align: center; }\n.cf table.courses input[type=text] { width: 100%; }\n.cf table.courses input[type=number] { width: 58px; }\n.cf table.courses td:first-child { white-space: nowrap; }\n.cf .handle { cursor: grab; font-size: 1.05rem; color: #78909c; padding: 0 4px; user-select: none; touch-action: none; vertical-align: middle; }\n.cf .handle:hover { color: #1a73e8; }\n.cf tr.dragging td { background: #e3f2fd !important; } .cf tr.dragging { outline: 2px solid #1a73e8; }\nbody.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none; }\n.cf .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: middle; margin-right: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n.cf .counter { margin-top: 10px; padding: 9px 12px; border-radius: 8px; font-size: 0.9rem; border: 1px solid; }\n.cf .counter.ok { background: #e8f5e9; border-color: #a5d6a7; color: #1b5e20; }\n.cf .counter.warn { background: #fff3e0; border-color: #ffcc80; color: #8a4b00; }\n.cf .counter .nums { font-weight: bold; margin-bottom: 3px; }\n.cf textarea { width: 100%; min-height: 78px; font-family: Consolas, monospace; font-size: 0.82rem; }\n.cf table.brk, .cf table.summary { border-collapse: collapse; width: 100%; background: #fff; table-layout: auto; margin: 0; }\n.cf table.brk td, .cf table.brk th, .cf table.summary td, .cf table.summary th { border: 1px solid #e0e0e0; padding: 5px 7px; font-size: 0.83rem; text-align: left; }\n.cf table.brk th, .cf table.summary th { background: #eef2f7; font-size: 0.78rem; }\n.cf table.brk tr.limited td { background: #fff8e1; } .cf table.brk tr.closed td { background: #ffebee; }\n.cf .seqnote { display: none; margin-top: 10px; background: #fff8e1; border: 1px solid #ffca28; border-radius: 8px; padding: 9px 12px; font-size: 0.87rem; color: #5d4300; }\n.cf .seqnote ul { margin: 4px 0 0 18px; padding: 0; }\n.cf .gapwarn { color: #b45309; font-weight: bold; }\n.cf-swapbar { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 7px 12px; font-size: 0.86rem; margin: 6px 0; display: none; }\n.cf-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: #444; margin: 4px 0 2px; }\n.cf-legend .sw { display: inline-block; width: 14px; height: 12px; vertical-align: middle; margin-right: 4px; border: 1px solid #bbb; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n.cf-timeline { margin-top: 14px; }\n.cf-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); max-width: 560px; width: calc(100% - 32px); background: #b71c1c; color: #fff; padding: 12px 16px 12px 14px; border-radius: 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.25); font-size: 0.92rem; z-index: 50; display: none; text-align: left; }\n.cf-toast button { float: right; background: none; border: none; color: #fff; -webkit-text-fill-color: #fff; font-size: 1.1rem; cursor: pointer; margin-left: 10px; }\n@media print {\n  details.cf-panel, .cf-swapbar, .cf-toast, .cf-noprint { display: none !important; }\n  .cf-timeline.cf-empty { display: none !important; }\n  .cf-timeline { break-before: auto; page-break-inside: avoid; }\n  .cf table.summary { min-width: 0; }\n  .credit-line.cf-auto, .credit-line.cf-locked { background: transparent !important; padding-left: 2px !important; }\n  .credit-line.cf-long { font-size: 6.5pt !important; }\n  .cf-mix { display: none !important; }\n}\n", "panel": "    <details class=\"cf cf-panel\" open>\n      <summary>📚 Fill in credits <span style=\"font-weight:normal;font-size:0.85rem;color:#555;\">(teacher tool: list the student’s remaining credits and the planner fills itself in)</span></summary>\n      <div class=\"panel-body\">\n\n        <h3>What should each week look like?</h3>\n        <div class=\"row\" id=\"presetRow\">\n          <span class=\"muted\">Quick picks:</span>\n          <button class=\"btn\" data-preset=\"smart\">⭐ Best balance (recommended)</button>\n          <button class=\"btn\" data-preset=\"ce\">1 Core + 1 Elective</button>\n          <button class=\"btn\" data-preset=\"cc\">2 Cores, then Electives</button>\n          <button class=\"btn\" data-preset=\"list\">Follow my list in order</button>\n        </div>\n        <div class=\"pattern\" id=\"patternRow\"></div>\n        <div class=\"radios\" id=\"sideRadios\">\n          <span style=\"font-weight:bold;font-size:0.82rem;\">When a week has 2 or more Cores (or 2 or more Electives):</span>\n          <label><input type=\"radio\" name=\"side\" value=\"same\" checked> Finish one course before starting the next <span class=\"muted\">(e.g. 2 US History a week until it’s done)</span></label>\n          <label><input type=\"radio\" name=\"side\" value=\"side\"> Work two courses at the same time <span class=\"muted\">(e.g. 1 US History + 1 Economics each week)</span></label>\n        </div>\n        <div class=\"example\" id=\"example\"></div>\n\n        <h3>Student's remaining credits</h3>\n        <div class=\"scroll\">\n          <table class=\"courses\">\n            <thead><tr>\n              <th style=\"width:104px;\">Order</th><th>Course title</th><th style=\"width:150px;\">Type</th>\n              <th class=\"c\" style=\"width:72px;\">A left</th><th class=\"c\" style=\"width:72px;\">B left</th>\n              <th class=\"c\" style=\"width:78px;\" title=\"Use this course during Thanksgiving, Spring and Summer weeks\">⭐ Use during<br>breaks</th>\n              <th class=\"c\" style=\"width:50px;\">Total</th><th style=\"width:34px;\"></th>\n            </tr></thead>\n            <tbody id=\"courseBody\"></tbody>\n          </table>\n        </div>\n        <div class=\"row\" style=\"margin-top:8px;\">\n          <button class=\"btn\" id=\"addCourse\">+ Add course</button>\n          <button class=\"btn\" id=\"copyList\" title=\"Copy this list so you can save it and paste it back in later\">📋 Copy list</button>\n          <button class=\"btn link\" id=\"clearCourses\">Clear list</button>\n        </div>\n        <p class=\"muted\" style=\"margin:6px 0 0;\">Each section is worth 5 credits. Enter how many are <em>left</em>: a full class is 5 + 5, a semester class is 5 + 0, and a student who already earned 2 credits of section A is 3 + 5. Use ⭐ for the courses the student should work on during Thanksgiving, Spring and Summer weeks (usually easier electives). During those weeks any Core in progress pauses, like Winter Break. The tool tries to finish a Core right before a break so no pause is needed.</p>\n\n        <details style=\"margin-top:10px;\">\n          <summary style=\"cursor:pointer;font-size:0.88rem;font-weight:bold;color:#123c8c;\">Paste a list instead (faster)</summary>\n          <p class=\"muted\" style=\"margin:6px 0;\">One course per line: <code>Title, Type, A left, B left</code>. You can also write one total (<code>US History, core, 10</code>) or a single section (<code>Biology B, core, 3</code>). Add <code>*</code> to star a course for break weeks. Type can be <code>core</code>, <code>mandatory</code> or <code>elective</code>.</p>\n          <textarea id=\"pasteBox\" placeholder=\"US History, core, 5, 5&#10;Economics, core, 5, 0&#10;Health, mandatory, 5, 0 *&#10;Ceramics, elective, 10\"></textarea>\n          <div class=\"row\" style=\"margin-top:6px;\"><button class=\"btn\" id=\"pasteAdd\">Add these to the list</button><span class=\"muted\" id=\"pasteMsg\"></span></div>\n        </details>\n\n        <div class=\"counter\" id=\"counter\"></div>\n\n        <div class=\"row\" style=\"margin-top:12px;\">\n          <button class=\"btn primary\" id=\"fillBtn\">Fill planner</button>\n          <button class=\"btn\" id=\"clearFill\">Clear filled lines</button>\n          <button class=\"btn\" id=\"swapBtn\">⇄ Swap two lines</button>\n        </div>\n        <div class=\"seqnote\" id=\"seqNote\"></div>\n        <p class=\"muted\" id=\"fillNote\" style=\"margin:6px 0 0;\">Lines you type yourself are never overwritten. After the first fill, the planner updates automatically as you edit the list or use + / –.</p>\n\n        <h3>Breaks &amp; limited-appointment weeks in this plan</h3>\n        <p class=\"muted\" style=\"margin:0 0 6px;\">By default, break weeks use the ⭐ courses from the list and any Core in progress pauses for that week. Choose a specific course here to override that. The tool moves the chosen course earlier or later so it carries straight through the break.</p>\n        <div class=\"scroll\" id=\"breakPanel\"></div>\n      </div>\n    </details>\n\n    <div class=\"cf cf-swapbar\" id=\"swapBar\">Swap mode: click one credit line, then another, to swap them. The swapped courses stay where you put them (shown in bold) and the other lines adjust around them. <button class=\"btn small\" id=\"swapDone\">Done</button></div>", "legend": "<div class=\"cf-legend\"><span><span class=\"sw\" style=\"background:#fff4d6;\"></span>Limited teacher appointments</span><span><span class=\"sw\" style=\"background:#ffd6d6;\"></span>Skipped week / school closed</span><span class=\"cf-noprint\"><span class=\"sw\" style=\"background:#fafcff;border-left:4px solid #1a73e8;\"></span>Filled by the credit tool</span><span class=\"cf-noprint\"><b>Bold</b> = course placed by the teacher</span></div>", "timeline": "<div class=\"cf cf-timeline cf-empty\" id=\"cfTimeline\"><h3>Course timeline</h3><p class=\"muted cf-noprint\" style=\"margin:0 0 6px;\">“Sequence” checks the rules: once a Core starts it’s worked on every school week until finished (pausing for a break week is fine), and an elective’s credits are no more than 4 weeks apart (closed weeks don’t count). Anything that breaks a rule turns orange.</p><div class=\"scroll\" id=\"summary\"></div></div><div class=\"cf cf-toast\" id=\"toast\" role=\"alert\"><button id=\"toastX\" aria-label=\"Close\">✕</button><span id=\"toastMsg\"></span></div>"};
+function __creditFillerApp(CF) {
+  'use strict';
+  const SEC = 5;
+  const MAX_WEEK = 4;
+  const TYPES = ['Core', 'Mandatory Elective', 'General Elective'];
+  const COLORS = ['#1a73e8', '#c2185b', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#6d4c41', '#d81b60', '#3949ab', '#7cb342', '#f9a825', '#546e7a'];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- State ----------
+  let weeks = [], courses = [], pins = {};
+  let mode = 'smart', pattern = ['core', 'elective', 'core', 'elective'], sideBySide = false;
+  let lastMix = null;
+  const PRESETS = { ce: ['core', 'elective', 'core', 'elective'], cc: ['core', 'core', 'elective', 'elective'], list: ['any', 'any', 'any', 'any'] };
+  const KIND_LABEL = { core: 'Core', elective: 'Elective', any: 'Next in my list' };
+  let lastPauses = [];
+  let nextId = 1, hasFilled = false, lastFill = null, swapMode = false, swapSel = null;
+
+  function newCourse(name, type, a, b, star) {
+    const id = nextId++;
+    return { id, name, type, a, b, star: !!star, color: COLORS[(id - 1) % COLORS.length] };
+  }
+  const byId = id => courses.find(c => c.id === id);
+  const cName = c => (c.name.trim() || 'Untitled course');
+  function units(c) { const u = []; for (let n = SEC - c.a + 1; n <= SEC; n++) u.push(['A', n]); for (let n = SEC - c.b + 1; n <= SEC; n++) u.push(['B', n]); return u; }
+  const total = c => c.a + c.b;
+
+  // ---------- Best balance: decide how many Core / Elective credits each week gets ----------
+  // Goals, in order: pair a Core with an Elective every week; break weeks get the lighter load;
+  // when electives run short, add Core credits to normal weeks spread out (not back to back, not in break weeks);
+  // keep elective weeks no more than 3 weeks apart so the student doesn't lose the thread.
+  const ELECTIVE_SPACING = 3;
+  function balanceKinds(byWeek, rem, kindOf) {
+    let E = 0;
+    courses.forEach(c => { if (kindOf(c) !== 'core') E += Math.max(0, rem[c.id]); });
+    let breakSlots = 0; byWeek.forEach(list => { breakSlots += list.filter(sl => sl.kind === 'break').length; });
+    const starE = courses.reduce((x, c) => x + (c.star && kindOf(c) !== 'core' ? Math.max(0, rem[c.id]) : 0), 0);
+    E -= Math.min(breakSlots, starE);
+    const W = [];
+    byWeek.forEach((list, wk) => {
+      if (list.some(sl => sl.kind === 'flex' || sl.kind === 'break')) return;   // decided as the plan runs
+      let lc = 0, le = 0;
+      for (let j = 0; j < Math.min(wk.credits, 4); j++) { const ln = wk.lines[j]; if (ln.mode === 'locked' && byId(ln.cid)) { if (kindOf(byId(ln.cid)) === 'core') lc++; else le++; } }
+      W.push({ wk, list, n: list.length, lc, le, lim: !!(wk.bi && wk.bi.kind === 'limited') });
+    });
+    // Every multi-credit week starts paired: half Core, half Elective (lines placed by hand count).
+    W.forEach(w => { const N = w.n + w.lc + w.le; w.e = Math.max(0, Math.min(w.n, Math.floor(N / 2) - w.le)); });
+    const spread = (L, m) => { if (m >= L.length) return L.slice(); const out = []; for (let i = 0; i < m; i++) out.push(L[Math.floor((i + 0.5) * L.length / m)]); return out; };
+    let sumE = W.reduce((x, w) => x + w.e, 0);
+    if (sumE > E) {
+      // Not enough electives to pair every week: some normal weeks get an extra Core (the same Core, so it
+      // simply moves faster). Spread out, kept out of break weeks, elective weeks kept close together.
+      let cut = sumE - E;
+      const L = W.filter(w => !w.lim && w.e > 0);
+      if (cut >= L.length) { L.forEach(w => { w.e--; cut--; }); }
+      else {
+        const keep = L.length - cut;
+        let keepSet;
+        if (L.length / keep > ELECTIVE_SPACING) { keepSet = new Set(); for (let i = 0; i < L.length && keepSet.size < keep; i += ELECTIVE_SPACING) keepSet.add(L[i]); }
+        else keepSet = new Set(spread(L, keep));
+        L.forEach(w => { if (!keepSet.has(w) && cut > 0) { w.e--; cut--; } });
+      }
+      while (cut > 0) {
+        const L2 = W.filter(w => w.e > 0); if (!L2.length) break;
+        const normal = L2.filter(w => !w.lim);
+        spread(normal.length ? normal : L2, cut).forEach(w => { if (cut > 0 && w.e > 0) { w.e--; cut--; } });
+      }
+    } else {
+      // Spare electives fill the odd credit of 3-credit weeks (break weeks first).
+      let R = E - sumE;
+      const O = W.filter(w => (w.n + w.lc + w.le) % 2 === 1 && w.e < w.n);
+      const lim = O.filter(w => w.lim), rest = O.filter(w => !w.lim);
+      lim.slice(0, R).forEach(w => { w.e++; R--; });
+      spread(rest, Math.max(0, R)).forEach(w => { if (R > 0) { w.e++; R--; } });
+    }
+    W.forEach(w => { const c = w.n - w.e; w.list.forEach((sl, i) => { sl.kind = i < c ? 'core' : 'elective'; }); });
+  }
+
+  // How each week feels: counts Core / Elective credits actually planned
+  function weekMix() {
+    const mix = { balanced: [], heavy: [], light: [] };
+    weeks.forEach(wk => {
+      if (wk.skip || wk.credits <= 0) return;
+      let c = 0, e = 0;
+      wk.lines.slice(0, wk.credits).forEach(ln => { const k = ln.cid != null ? byId(ln.cid) : null; if (k) { if (k.type === 'Core') c++; else e++; } });
+      if (c + e === 0) return;
+      const N = c + e;
+      if (c > Math.ceil(N / 2)) mix.heavy.push(wk.w);
+      else if (N >= 2 && c < Math.floor(N / 2) && !(wk.bi && wk.bi.kind === 'limited')) mix.light.push(wk.w);
+      else mix.balanced.push(wk.w);
+    });
+    return mix;
+  }
+
+  // ---------- The filler ----------
+  function fill() {
+    weeks.forEach(wk => wk.lines.forEach(ln => {
+      if (ln.mode === 'manual' && !ln.text.trim()) { ln.mode = ''; ln.text = ''; }
+      if (ln.mode === 'auto' || (ln.mode === 'locked' && (wk.skip || !byId(ln.cid)))) { ln.mode = ''; ln.text = ''; ln.cid = null; }
+    }));
+    const rem = {}; courses.forEach(c => rem[c.id] = total(c));
+    weeks.forEach(wk => { if (!wk.skip) wk.lines.forEach(ln => { if (ln.mode === 'locked') rem[ln.cid]--; }); });
+
+    const slots = [];
+    weeks.forEach(wk => { if (wk.skip) return; for (let j = 0; j < wk.credits; j++) if (wk.lines[j].mode === '') slots.push({ wk, j, done: false }); });
+    const put = (s, c) => { const ln = s.wk.lines[s.j]; ln.mode = 'auto'; ln.cid = c.id; rem[c.id]--; s.done = true; };
+
+    // Sequence-aware scheduling.
+    // Every open credit line belongs to a "stream" (Core, Elective, or list order) based on the weekly pattern.
+    // Each stream works one course at a time from start to finish, so courses are never broken up.
+    // A course chosen for a break week is moved earlier or later in its stream so it is in progress that week.
+    const kindOf = c => c.type === 'Core' ? 'core' : 'elective';
+    const compat = (k, c) => k === 'any' || kindOf(c) === k;
+
+    let oneWeek = 0;
+    const byWeek = new Map();
+    slots.forEach(sl => { if (!byWeek.has(sl.wk)) byWeek.set(sl.wk, []); byWeek.get(sl.wk).push(sl); });
+    const useFlex = mode === 'smart' || pattern.some(k => k !== 'any');
+    if (useFlex) byWeek.forEach((list, wk) => { if (wk.credits === 1 && list.length === 1) list[0].kind = 'flex'; });
+    // Break weeks (Thanksgiving, Spring, Summer): only the teacher's ⭐ courses (or the course picked for that week).
+    // Any Core in progress simply pauses for the break, like Winter Break.
+    let starLeft = courses.reduce((x, c) => x + (c.star ? Math.max(0, rem[c.id]) : 0), 0);
+    const breakWeeks = [];
+    byWeek.forEach((list, wk) => {
+      if (!wk.bi || wk.bi.kind !== 'limited') return;
+      const pinned = pins[wk.w] != null && byId(pins[wk.w]);
+      if (pinned || starLeft > 0) { list.forEach(sl => { sl.kind = 'break'; }); breakWeeks.push(wk.w); if (!pinned) starLeft -= list.length; }
+    });
+    // Hold back enough ⭐ credits for the break weeks still ahead (taken from the lowest ⭐ courses in the list).
+    const actIdx = {};
+    { let ai = 0; weeks.forEach(wk => { if (!wk.skip && wk.credits > 0 && breakWeeks.indexOf(wk.w) < 0) actIdx[wk.w] = ai++; }); }
+    const reserve = {};
+    let breakAhead = 0;
+    byWeek.forEach((list, wk) => { if (pins[wk.w] == null) breakAhead += list.filter(sl => sl.kind === 'break').length; });
+    { let need = breakAhead; [...courses].reverse().forEach(c => { if (c.star && need > 0) { const r = Math.min(Math.max(0, rem[c.id]), need); reserve[c.id] = r; need -= r; } }); }
+    const avail = id => rem[id] - (reserve[id] || 0);
+    function syncReserve() {   // never hold back more than the break credits still to come
+      let total = Object.values(reserve).reduce((x, v) => x + v, 0);
+      for (const c of courses) { if (total <= breakAhead) break; const r = reserve[c.id] || 0; const cut = Math.min(r, total - breakAhead); if (cut > 0) { reserve[c.id] = r - cut; total -= cut; } }
+    }
+    if (mode === 'smart') balanceKinds(byWeek, rem, kindOf);
+    byWeek.forEach((list, wk) => {
+      const used = { core: 0, elective: 0, any: 0 };
+      if (list.length === 1 && list[0].kind === 'flex') return;
+      if (list.some(sl => sl.kind === 'break')) return;
+      if (mode === 'smart') {
+        list.forEach(sl => { sl.lane = 0; });
+        const pc0 = pins[wk.w] != null ? byId(pins[wk.w]) : null;
+        if (pc0 && !list.some(sl => compat(sl.kind, pc0))) { const sl = list[list.length - 1]; sl.kind = kindOf(pc0); sl.lane = 0; }
+        return;
+      }
+      // The week's pattern positions; lines the teacher already filled use up the matching positions first.
+      let pos = wk.credits === 1 ? [pattern[oneWeek++ % 2]] : pattern.slice(0, Math.min(wk.credits, 4));
+      for (let j = 0; j < wk.credits && j < 4; j++) {
+        const ln = wk.lines[j];
+        if (ln.mode === 'locked' && byId(ln.cid)) {
+          const c = byId(ln.cid); let q = pos.findIndex(k => k === kindOf(c)); if (q < 0) q = pos.indexOf('any'); if (q < 0) q = pos.length - 1;
+          pos.splice(q, 1);
+        } else if (ln.mode === 'manual') pos.splice(Math.min(j, pos.length - 1), 1);
+      }
+      list.forEach((sl, i) => {
+        sl.kind = pos[Math.min(i, pos.length - 1)] || pattern[0]; sl.lane = sideBySide ? used[sl.kind]++ : 0;
+      });
+      const pc = pins[wk.w] != null ? byId(pins[wk.w]) : null;
+      if (pc && !list.some(sl => compat(sl.kind, pc))) { const sl = list[list.length - 1]; sl.kind = kindOf(pc); sl.lane = 0; }
+    });
+    const streams = {};
+    slots.forEach(sl => {
+      if (sl.kind === 'flex' || sl.kind === 'break') return;
+      const key = sl.kind + sl.lane;
+      if (!streams[key]) streams[key] = { slots: [], cur: null, paused: [], kind: sl.kind };
+      sl.key = key; sl.idx = streams[key].slots.length; streams[key].slots.push(sl);
+    });
+
+    const anchors = [];
+    Object.keys(pins).forEach(w => { const c = byId(pins[w]); if (c) anchors.push({ c, w: +w, force: true }); });
+    weeks.forEach(wk => { if (!wk.skip) wk.lines.forEach(ln => { if (ln.mode === 'locked' && byId(ln.cid)) anchors.push({ c: byId(ln.cid), w: wk.w, force: false }); }); });
+    anchors.sort((x, y) => x.w - y.w);
+
+    const claimed = new Set();
+    const anchoredLater = (c, w) => anchors.some(a => a.c === c && a.w > w);
+
+    function choose(st, sl) {
+      let cands = courses.filter(c => compat(sl.kind, c) && avail(c.id) > 0 && !claimed.has(c.id));
+      if (!cands.length) return null;
+      const list = st.slots, i0 = sl.idx;
+      if (sl.lane > 0 && sl.kind !== 'elective') {
+        // A second Core worked side by side must be able to finish before the weeks with room for it run out.
+        let run = 0, prev = null;
+        for (let q = i0; q < list.length; q++) { const ai = actIdx[list[q].wk.w]; if (prev != null && ai - prev > 1) break; if (ai !== prev) run++; prev = ai; }
+        cands = cands.filter(c => avail(c.id) <= run);
+        if (!cands.length) return null;
+      }
+      if (sl.kind === 'elective') {
+        // Don't start a new elective in the last week or two before a long stretch with no elective spot
+        // (for example right before the 1-credit weeks): it would sit unfinished for weeks. That week gets
+        // an extra credit of the Core in progress instead, unless an elective short enough to finish exists.
+        let run = 0, prev = null, q = i0;
+        for (; q < list.length; q++) { const ai = actIdx[list[q].wk.w]; if (prev != null && ai - prev > MAX_APART) break; if (ai !== prev) run++; prev = ai; }
+        const lastAct = Object.keys(actIdx).length - 1;
+        const gapAhead = q < list.length || (prev != null && lastAct - prev > MAX_APART);
+        if (gapAhead && run <= 2) {
+          const short = cands.filter(c => avail(c.id) <= run);
+          if (short.length) cands = short;
+          else if (Object.values(streams).some(x => x.kind === 'core' && x.cur != null && avail(x.cur) > 0)) return null;
+        }
+      }
+      const distTo = pred => { for (let q = Math.max(0, i0); q < list.length; q++) if (pred(list[q])) return q - i0; return Infinity; };
+      const A = anchors.find(a => a.w >= sl.wk.w && cands.includes(a.c));
+      if (A) {
+        const g = distTo(x => x.wk.w >= A.w);
+        if (g === 0) return A.c.id;
+        if (g !== Infinity) {
+          const fits = cands.find(c => c !== A.c && avail(c.id) <= g && !anchoredLater(c, sl.wk.w));
+          if (fits) return fits.id;                       // a course that finishes before the break
+          if (avail(A.c.id) > g) return A.c.id;             // start early so it runs through the break
+          const other = cands.find(c => c !== A.c && !anchoredLater(c, sl.wk.w));
+          return (other || A.c).id;                       // last resort: will pause for the break
+        }
+      }
+      const first = cands.find(c => !anchoredLater(c, sl.wk.w)) || cands[0];
+      const bw = breakWeeks.find(w => w >= sl.wk.w);
+      if (bw != null) {
+        const d = distTo(x => x.wk.w > bw);               // this stream's credits before the next break
+        if (d !== Infinity && d > 0 && avail(first.id) > d) {
+          if (sl.kind === 'core') {
+            // Avoid pausing a Core: if another Core ends exactly at the break, do that one first.
+            const exact = cands.find(c => c !== first && avail(c.id) === d && !anchoredLater(c, sl.wk.w));
+            if (exact) return exact.id;
+          } else if (!first.star) {
+            // Electives: have a ⭐ course in progress at the break so it carries straight through.
+            const S = cands.find(c => c.star && c !== first && avail(c.id) > d && !anchoredLater(c, sl.wk.w));
+            if (S) return S.id;
+          }
+        }
+      }
+      return first.id;
+    }
+
+    // A course chosen for a break week. Cores are never split: if the Core slot is busy with another
+    // Core that week, the chosen course takes an elective slot instead and the elective waits.
+    const notes = [];
+    const isFree = st => st.cur == null || rem[st.cur] <= 0;
+    const curIsElective = st => !isFree(st) && kindOf(byId(st.cur)) === 'elective';
+    let lastDoneKind = null;
+    const inProg = st => (st.cur != null && avail(st.cur) > 0) ? st.cur : (st.paused.find(x => avail(x) > 0) ?? null);
+    function coreBusy() { for (const st of Object.values(streams)) if (st.kind === 'core') { const id = inProg(st); if (id != null) return id; } return null; }
+    function ensureStream(k) { const key = k + '0'; if (!streams[key]) streams[key] = { slots: [], cur: null, paused: [], kind: k }; return key; }
+    function resolveFlex(sl, forced) {
+      let k = forced;
+      if (!k) {
+        if (coreBusy() != null) k = 'core';                              // never interrupt a Core
+        else if (streams.elective0 && inProg(streams.elective0) != null) k = 'elective';   // finish the elective in progress
+        else {
+          const has = kk => courses.some(c => kindOf(c) === kk && rem[c.id] > 0 && !claimed.has(c.id));
+          k = lastDoneKind === 'core' ? 'elective' : 'core';             // take turns course by course
+          if (!has(k)) k = k === 'core' ? 'elective' : 'core';
+        }
+      }
+      sl.kind = k; sl.lane = 0; sl.key = ensureStream(k);
+      const st = streams[sl.key];
+      const q = st.slots.findIndex(x => x.wk.w >= sl.wk.w); sl.idx = q < 0 ? st.slots.length : q;
+    }
+    function startWeek(wk) {
+      const Y = pins[wk.w] != null ? byId(pins[wk.w]) : null;
+      if (!Y || rem[Y.id] <= 0) return;
+      if (wk.lines.some(l => l.mode === 'locked' && l.cid === Y.id)) return;
+      const wl = byWeek.get(wk);
+      if (wl.some(x => x.kind === 'break')) return;
+      if (wl.length === 1 && wl[0].kind === 'flex') {
+        // 1-credit week: only allowed if it doesn't interrupt a Core
+        const busyCore = coreBusy();
+        if (busyCore != null && busyCore !== Y.id) { notes.push('<b>' + esc(cName(Y)) + '</b> could not be placed in ' + wk.bi.name + ' (week ' + dispW(wk.w) + ') because ' + esc(cName(byId(busyCore))) + ' (Core) is in progress and Cores are never interrupted. Move it higher in the list or choose a different week.'); return; }
+        resolveFlex(wl[0], kindOf(Y));
+      }
+      const here = [...new Set(wl.map(x => x.key))].map(k => streams[k]);
+      if (here.some(st => st.cur === Y.id && rem[Y.id] > 0)) return;
+      const fitsKind = st => compat(st.slots[0].kind, Y);
+      const host = here.find(st => fitsKind(st) && isFree(st)) || here.find(st => fitsKind(st) && curIsElective(st)) ||
+                   here.find(isFree) || here.find(curIsElective);
+      if (!host) { notes.push('<b>' + esc(cName(Y)) + '</b> could not be placed in ' + wk.bi.name + ' (week ' + dispW(wk.w) + ') without splitting a Core. Move it higher in the list or choose a different week.'); return; }
+      Object.values(streams).forEach(st => { st.paused = st.paused.filter(x => x !== Y.id); if (st !== host && st.cur === Y.id) st.cur = null; });
+      if (!isFree(host) && host.cur !== Y.id) host.paused.push(host.cur);
+      host.cur = Y.id; claimed.add(Y.id);
+    }
+
+    function finishIfDone(c) {
+      if (avail(c.id) > 0) return;
+      lastDoneKind = kindOf(c); claimed.delete(c.id);
+      Object.values(streams).forEach(st => { if (st.cur === c.id) st.cur = null; st.paused = st.paused.filter(x => x !== c.id); });
+    }
+    function breakPick(sl) {
+      const pc = pins[sl.wk.w] != null ? byId(pins[sl.wk.w]) : null;
+      if (pc && rem[pc.id] > 0) return pc;
+      for (const st of Object.values(streams)) { const id = st.cur; if (id != null && rem[id] > 0 && byId(id).star) return byId(id); }
+      const S = courses.find(c => c.star && rem[c.id] > 0 && !claimed.has(c.id)) || courses.find(c => c.star && rem[c.id] > 0);
+      if (!S) return null;
+      if (avail(S.id) > 0 && !claimed.has(S.id)) {     // the ⭐ course becomes the one in progress and carries on after the break
+        const st = streams[ensureStream(kindOf(S))];
+        if (st.cur != null && avail(st.cur) > 0) st.paused.push(st.cur);
+        st.cur = S.id; claimed.add(S.id);
+      }
+      return S;
+    }
+
+    let curWk = null;
+    slots.forEach(sl => {
+      if (sl.wk !== curWk) { curWk = sl.wk; startWeek(sl.wk); }
+      if (sl.kind === 'break') {
+        const bc = breakPick(sl);
+        if (pins[sl.wk.w] == null) { breakAhead--; }
+        if (bc) { const fromReserve = avail(bc.id) <= 0; put(sl, bc); if (fromReserve && reserve[bc.id] > 0) reserve[bc.id]--; syncReserve(); finishIfDone(bc); return; }
+        syncReserve();
+        resolveFlex(sl);                                  // no ⭐ courses left: plan the week normally
+      }
+      if (sl.kind === 'flex') resolveFlex(sl);
+      const st = streams[sl.key];
+      if (st.cur == null || avail(st.cur) <= 0) {
+        if (st.cur != null) { claimed.delete(st.cur); st.cur = null; }
+        while (st.cur == null && st.paused.length) {
+          const pid = st.paused.pop();
+          if (avail(pid) > 0) st.cur = pid;
+          else claimed.delete(pid);
+        }
+        if (st.cur == null) st.cur = choose(st, sl);
+        if (st.cur != null) claimed.add(st.cur);
+      }
+      let c = st.cur != null ? byId(st.cur) : null;
+      if (!c) {   // this kind has run out: keep the weekly pace with another course
+        const curs = Object.values(streams).map(x => x.cur).filter(id => id != null && avail(id) > 0);
+        const busy = curs.find(id => kindOf(byId(id)) === sl.kind) ?? curs[0];
+        c = busy != null ? byId(busy) : (courses.find(x => avail(x.id) > 0 && !claimed.has(x.id)) || null);
+      }
+      if (c) { put(sl, c); finishIfDone(c); }
+    });
+    lastPauses = notes;
+
+    let unplaced = 0; courses.forEach(c => { if (rem[c.id] > 0) unplaced += rem[c.id]; });
+    lastFill = { blank: slots.filter(s => !s.done).length, unplaced };
+    hasFilled = true;
+    renumber();
+  }
+
+  // Labels are numbered in calendar order, so "A 3/5" always comes after "A 2/5".
+  function renumber() {
+    weeks.forEach(wk => wk.lines.forEach(ln => {
+      if (ln.cid != null && !byId(ln.cid)) { if (ln.mode === 'auto') { ln.text = ''; ln.mode = ''; } else ln.mode = 'manual'; ln.cid = null; }
+    }));
+    const seen = {};
+    weeks.forEach(wk => {
+      if (wk.skip) return;
+      wk.lines.forEach(ln => {
+        if (ln.cid == null) return;
+        const c = byId(ln.cid), u = units(c), n = seen[c.id] || 0; seen[c.id] = n + 1;
+        ln.text = n < u.length ? cName(c) + ' ' + u[n][0] + ' ' + u[n][1] + '/' + SEC : cName(c) + ' (extra)';
+      });
+    });
+  }
+
+  // ---------- Credit limit ----------
+  const listedTotal = () => courses.reduce((s, c) => s + total(c), 0);
+  function roomInPlan() { const st = planStats(); return st.lines - st.typed; }
+  let toastTimer = null;
+  function warn(html) {
+    $('toastMsg').innerHTML = html; $('toast').style.display = 'block';
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').style.display = 'none'; }, 7000);
+  }
+  const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+  function changed() {
+    weeks = readWeeks();
+    if (hasFilled) fill(); else renumber();
+    paint(); renderCounter(); renderBreaks(); renderSummary(); renderFillBtn(); renderSeq(); renderPattern();
+  }
+
+  // ---------- Rendering ----------
+  function renderCourses() {
+    renderPattern();
+    const tb = $('courseBody');
+    if (!courses.length) { tb.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:14px;">No courses yet. Click “+ Add course” or paste a list.</td></tr>'; return; }
+    tb.innerHTML = courses.map((c, i) =>
+      '<tr data-id="' + c.id + '">' +
+      '<td><span class="handle" title="Drag to reorder">⠿</span><span class="dot" style="background:' + c.color + '"></span><button class="btn small" data-act="up"' + (i === 0 ? ' disabled' : '') + ' title="Move up">↑</button><button class="btn small" data-act="down"' + (i === courses.length - 1 ? ' disabled' : '') + ' title="Move down">↓</button></td>' +
+      '<td><input type="text" data-f="name" value="' + esc(c.name) + '" placeholder="Course title"></td>' +
+      '<td><select data-f="type">' + TYPES.map(t => '<option' + (t === c.type ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></td>' +
+      '<td class="c"><input type="number" min="0" max="5" data-f="a" value="' + c.a + '"></td>' +
+      '<td class="c"><input type="number" min="0" max="5" data-f="b" value="' + c.b + '"></td>' +
+      '<td class="c"><input type="checkbox" data-f="star"' + (c.star ? ' checked' : '') + '></td>' +
+      '<td class="c" data-total>' + total(c) + '</td>' +
+      '<td class="c"><button class="btn link" data-act="del" title="Remove">✕</button></td></tr>'
+    ).join('');
+  }
+
+  function renderPattern() {
+    const match = mode === 'smart' ? 'smart' : Object.keys(PRESETS).find(k => PRESETS[k].join() === pattern.join());
+    document.querySelectorAll('#presetRow .btn').forEach(b => b.classList.toggle('on', b.dataset.preset === match));
+    if (mode === 'smart') {
+      $('patternRow').innerHTML = '<span class="muted" style="flex-basis:100%;">Want a specific weekly pattern instead? <a href="#" id="toPattern">Set it myself</a></span>';
+      const m = hasFilled ? weekMix() : null;
+      const list = a => { a = a.map(dispW); return a.length > 6 ? a.slice(0, 6).join(', ') + '…' : a.join(', '); };
+      $('example').innerHTML = '<b>How this works:</b> once a Core starts, it\u2019s worked on every week until it\u2019s finished. Every 2-credit week pairs that Core with an Elective whenever possible. ' +
+        'If there aren\u2019t enough electives, a few weeks get an extra credit of the same Core. Those weeks are spread out and never back to back. 1-credit weeks do one course at a time, taking turns between Cores and Electives. Break weeks use the ⭐ courses.' +
+        (m ? '<br><b>This plan:</b> ' + m.balanced.length + ' balanced week' + (m.balanced.length === 1 ? '' : 's') +
+          (m.light.length ? ' · ' + m.light.length + ' lighter (more Electives): week ' + list(m.light) : '') +
+          (m.heavy.length ? ' · <span class="gapwarn">' + m.heavy.length + ' with extra Cores: week ' + list(m.heavy) + '</span>' : ' · no double-Core weeks') : '') +
+        '<br><span class="muted">Courses are used top to bottom within Cores and within Electives. Drag ⠿ to change the order.</span>';
+      $('sideRadios').style.display = 'none';
+      return;
+    }
+    $('sideRadios').style.display = '';
+    const ord = ['1st', '2nd', '3rd', '4th'];
+    $('patternRow').innerHTML = '<span class="muted" style="flex-basis:100%;">Fill each week in this order' + (match ? '' : ' <b>(custom)</b>') + ':</span>' +
+      pattern.map((k, i) => '<span><label for="pat' + i + '">' + ord[i] + ' credit</label><select id="pat' + i + '" data-pat="' + i + '">' +
+        Object.keys(KIND_LABEL).map(o => '<option value="' + o + '"' + (o === k ? ' selected' : '') + '>' + KIND_LABEL[o] + '</option>').join('') + '</select></span>').join('');
+    const word = k => KIND_LABEL[k] === 'Next in my list' ? 'next in list' : KIND_LABEL[k];
+    const one = pattern.every(k => k === 'any') ? 'next in list' : 'one course at a time (a Core is never interrupted)';
+    $('example').innerHTML = '<b>What this makes:</b> 1-credit weeks: ' + one +
+      ' &nbsp;·&nbsp; 2-credit weeks: ' + pattern.slice(0, 2).map(word).join(' + ') +
+      ' &nbsp;·&nbsp; 3-credit weeks: ' + pattern.slice(0, 3).map(word).join(' + ') +
+      '<br><span class="muted">If the student runs out of one kind, the other kind fills in so the weekly pace stays the same. Courses are used top to bottom. Drag ⠿ to change the order.</span>';
+  }
+
+  function planStats() {
+    let lines = 0, typed = 0;
+    weeks.forEach(wk => { if (wk.skip) return; lines += wk.credits; for (let j = 0; j < wk.credits; j++) if (wk.lines[j].mode === 'manual' && wk.lines[j].text.trim()) typed++; });
+    return { lines, typed };
+  }
+
+  function renderCounter() {
+    const listed = courses.reduce((s, c) => s + total(c), 0);
+    const st = planStats(), open = st.lines - st.typed, diff = listed - open;
+    const el = $('counter');
+    let msg;
+    if (diff === 0) msg = '✓ Your list matches the plan exactly.';
+    else if (diff < 0) msg = 'Your list is ' + (-diff) + ' credit' + (-diff === 1 ? '' : 's') + ' short. ' + (-diff) + ' credit line' + (-diff === 1 ? '' : 's') + ' will stay blank. Add courses or credits to the list.';
+    else msg = 'Your list has ' + plural(diff, 'more credit') + ' than this plan has room for, so ' + (diff === 1 ? 'it' : 'they') + ' won\u2019t be placed. Remove ' + plural(diff, 'credit') + ' from the list.';
+    el.className = 'counter ' + (diff === 0 ? 'ok' : 'warn');
+    el.innerHTML = '<div class="nums">Credits in list: ' + listed + ' &nbsp;·&nbsp; Credits in plan: ' + st.lines + (st.typed ? ' (' + st.typed + ' typed by hand)' : '') +
+      ' &nbsp;·&nbsp; Room left: ' + Math.max(0, open - listed) + '</div>' + msg;
+  }
+
+  function courseOptions(sel, firstLabel) {
+    return '<option value="">' + firstLabel + '</option>' + courses.map(c => '<option value="' + c.id + '"' + (sel === c.id ? ' selected' : '') + '>' + esc(cName(c)) + (c.star ? ' ⭐' : '') + '</option>').join('');
+  }
+
+  function renderBreaks() {
+    const rows = weeks.filter(w => w.bi);
+    if (!rows.length) { $('breakPanel').innerHTML = '<p class="muted">No break or limited-appointment weeks fall inside this plan’s weeks.</p>'; return; }
+    $('breakPanel').innerHTML = '<table class="brk"><thead><tr><th>Week</th><th>Dates</th><th>Break</th><th>Credits</th><th>Course to use this week</th><th>Planned</th></tr></thead><tbody>' +
+      rows.map(wk => {
+        const planned = wk.lines.slice(0, Math.max(wk.credits, 0)).map(l => l.text).filter(Boolean).map(esc).join('<br>') || '<span class="muted">–</span>';
+        let pick;
+        if (wk.bi.kind === 'closed') pick = '<b style="color:#b71c1c;">School closed</b>';
+        else if (wk.skip) pick = '<span class="muted">Skipped (0 credits)</span>';
+        else if (!wk.credits) pick = '<span class="muted">0 credits this week</span>';
+        else pick = '<select data-pin="' + wk.w + '">' + courseOptions(pins[wk.w] != null ? pins[wk.w] : null, 'Automatic (⭐ courses)') + '</select>';
+        return '<tr class="' + wk.bi.kind + '"><td>' + dispW(wk.w) + '</td><td>' + CF.weeks[wk.w].range + '</td><td>' + wk.bi.name + '<br><span class="muted">' +
+          (wk.bi.kind === 'closed' ? 'School closed' : 'Limited appointments') + '</span></td><td>' + (wk.skip ? 0 : wk.credits) + '</td><td>' + pick + '</td><td>' + planned + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  // ---------- Reading and painting the real planner ----------
+  function Line(el) {
+    this.el = el; this.mode = ''; this.cid = null;
+    const lab = el.closest('label');
+    this.box = lab ? lab.querySelector('input[type=checkbox]') : null;
+  }
+  Object.defineProperty(Line.prototype, 'text', { get() { return this.el.value; }, set(v) { this.el.value = v; } });
+  Object.defineProperty(Line.prototype, 'done', { get() { return this.box ? this.box.checked : false; }, set(v) { if (this.box) this.box.checked = !!v; } });
+  const lineMap = new Map();
+  function lineFor(el) { let l = lineMap.get(el.id); if (!l) { l = new Line(el); lineMap.set(el.id, l); } return l; }
+  function readWeeks() {
+    const out = [];
+    document.querySelectorAll('table.planner tbody tr[data-week]').forEach(tr => {
+      const w = +tr.getAttribute('data-week');
+      const info = CF.weeks[w] || {};
+      const valEl = tr.querySelector('.val');
+      out.push({
+        w, tr,
+        skip: tr.getAttribute('data-skip') === '1',
+        credits: valEl ? (parseInt(valEl.textContent) || 0) : 0,
+        bi: info.bi || null,
+        lines: Array.from(tr.querySelectorAll('input.credit-line')).map(lineFor)
+      });
+    });
+    return out;
+  }
+  const dispW = w => (CF.weeks[w] ? CF.weeks[w].disp : String(w));
+  const curTarget = () => { const t = document.getElementById('tgt'); return t ? (parseInt(t.textContent) || 0) : 0; };
+
+  let pickSig = '';
+  function refreshPickers() {
+    const sig = courses.map(c => c.id + ':' + cName(c)).join('|');
+    if (sig === pickSig) return;
+    pickSig = sig;
+    const html = '<option value="" disabled selected>▼</option>' +
+      (courses.length ? '<optgroup label="Student’s courses">' + courses.map(c => '<option value="cf:' + c.id + '">' + esc(cName(c)) + '</option>').join('') + '</optgroup><optgroup label="General">' : '') +
+      ['English', 'Math', 'Science', 'History', 'Elective'].map(s => '<option value="' + s + '">' + s + '</option>').join('') +
+      '<option value="_custom">Custom...</option>' + (courses.length ? '</optgroup>' : '') + '<option value="_clear">Clear line</option>';
+    document.querySelectorAll('select.subj-pick').forEach(s => { s.innerHTML = html; s.selectedIndex = 0; });
+  }
+
+  function paint() {
+    const mix = weekMix(), heavy = new Set(mix.heavy), light = new Set(mix.light);
+    weeks.forEach(wk => {
+      wk.lines.forEach(ln => {
+        const c = ln.cid != null ? byId(ln.cid) : null;
+        const el = ln.el;
+        el.classList.toggle('cf-auto', ln.mode === 'auto');
+        el.classList.toggle('cf-locked', ln.mode === 'locked');
+        el.classList.toggle('cf-long', (ln.text || '').length > (ln.mode === 'locked' ? 13 : 16));
+        el.classList.toggle('cf-sel', swapSel === ln);
+        if (c && (ln.mode === 'auto' || ln.mode === 'locked')) el.style.setProperty('--cfc', c.color); else el.style.removeProperty('--cfc');
+        el.title = ln.text || '';
+        el.readOnly = swapMode;
+      });
+      const cell = wk.tr.querySelector('td.col-date');
+      if (cell) {
+        let t = cell.querySelector('.cf-mix');
+        const want = heavy.has(wk.w) ? ['heavy', 'Extra Core week'] : (light.has(wk.w) && !(wk.bi && wk.bi.kind === 'limited')) ? ['light', 'Lighter week'] : null;
+        if (!want) { if (t) t.remove(); }
+        else { if (!t) { t = document.createElement('span'); cell.appendChild(t); } t.className = 'cf-tag cf-mix ' + want[0]; t.textContent = want[1]; }
+      }
+      wk.tr.classList.toggle('cf-limited-row', !!(wk.bi && wk.bi.kind === 'limited') && !wk.skip);
+    });
+    document.body.classList.toggle('cf-swapping', swapMode);
+    $('swapBar').style.display = swapMode ? 'block' : 'none';
+    $('swapBtn').classList.toggle('on', swapMode);
+    $('cfTimeline').classList.toggle('cf-empty', !courses.length || !weeks.some(wk => wk.lines.some(l => l.cid != null)));
+    refreshPickers();
+  }
+  function renderSummary() {
+    const info = {};
+    let active = -1;
+    weeks.forEach(wk => {
+      if (wk.skip || wk.credits <= 0) return;
+      active++;
+      wk.lines.forEach(ln => {
+        if (ln.cid == null) return;
+        const o = info[ln.cid] || (info[ln.cid] = { first: wk.w, last: wk.w, n: 0, brk: [], lastA: active, gap: 0 });
+        o.gap = Math.max(o.gap, active - o.lastA - 1); o.lastA = active;
+        o.last = wk.w; o.n++;
+        if (wk.bi && wk.bi.kind === 'limited') { const t = wk.bi.name + ' (Wk ' + dispW(wk.w) + ')'; if (o.brk.indexOf(t) < 0) o.brk.push(t); }
+      });
+    });
+    if (!courses.length) { $('summary').innerHTML = '<p class="muted">Add courses to see when each one happens.</p>'; return; }
+    const iss = sequenceIssues();
+    $('summary').innerHTML = '<table class="summary"><thead><tr><th>Course</th><th>Type</th><th>Weeks</th><th>Dates</th><th>Placed</th><th>Sequence</th><th>During limited-appointment weeks</th></tr></thead><tbody>' +
+      courses.map(c => {
+        const o = info[c.id];
+        const placed = o ? o.n : 0;
+        const r = iss[c.id] || { apart: 0, split: [] };
+        let seq = '';
+        if (o) {
+          if (c.type === 'Core') seq = r.split.length ? '<span class="gapwarn">Stops in week ' + r.split.map(dispW).join(', ') + '</span>' : '✓ Every week';
+          else if (r.savedForBreaks && r.apart <= 1) seq = '⭐ Saved for break weeks';
+          else seq = (r.savedForBreaks ? '⭐ Saved for break weeks · ' : '') + (r.apart <= 1 ? '✓ Every week' : (r.apart > MAX_APART ? '<span class="gapwarn">Up to ' + r.apart + ' weeks apart</span>' : 'Up to ' + r.apart + ' weeks apart'));
+        }
+        return '<tr><td><span class="dot" style="background:' + c.color + '"></span>' + esc(cName(c)) + '</td><td>' + c.type + '</td>' +
+          '<td>' + (o ? (o.first === o.last ? 'Week ' + dispW(o.first) : 'Weeks ' + dispW(o.first) + (dispW(o.first).indexOf('(') !== dispW(o.last).indexOf('(') || dispW(o.first).indexOf('(') >= 0 ? ' \u2013 ' : '\u2013') + dispW(o.last)) : '<span class="muted">not placed yet</span>') + '</td>' +
+          '<td>' + (o ? CF.weeks[o.first].start + ' – ' + CF.weeks[o.last].end : '') + '</td>' +
+          '<td' + (placed < total(c) ? ' style="color:#b45309;font-weight:bold;"' : '') + '>' + placed + ' / ' + total(c) + '</td>' +
+          '<td>' + seq + '</td>' +
+          '<td>' + (o && o.brk.length ? o.brk.join(', ') : '<span class="muted">–</span>') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  // Checks the planner as it stands (including lines placed by hand).
+  // Cores: never split by another Core. Electives: credits no more than 4 weeks apart (closed weeks don't count).
+  const MAX_APART = 4;
+  function sequenceIssues() {
+    const act = weeks.filter(w => !w.skip && w.credits > 0);
+    const at = {};
+    act.forEach((wk, i) => wk.lines.forEach(ln => { if (ln.cid != null && byId(ln.cid)) { const a = at[ln.cid] || (at[ln.cid] = []); if (a[a.length - 1] !== i) a.push(i); } }));
+    const res = {};
+    courses.forEach(c => {
+      const a = at[c.id] || []; const r = { apart: a.length > 1 ? 1 : 0, split: [] };
+      for (let k = 1; k < a.length; k++) {
+        const lim = i => act[i].bi && act[i].bi.kind === 'limited';
+        if (c.star && c.type !== 'Core' && (lim(a[k]) || lim(a[k - 1])) && a[k] - a[k - 1] > MAX_APART) { r.savedForBreaks = true; continue; }
+        r.apart = Math.max(r.apart, a[k] - a[k - 1]);
+        if (c.type === 'Core') for (let i = a[k - 1] + 1; i < a[k]; i++) if (!(act[i].bi && act[i].bi.kind === 'limited')) r.split.push(act[i].w);
+      }
+      res[c.id] = r;
+    });
+    return res;
+  }
+
+  function renderSeq() {
+    const el = $('seqNote');
+    const iss = sequenceIssues(), items = [];
+    courses.forEach(c => {
+      const r = iss[c.id]; if (!r) return;
+      if (c.type === 'Core' && r.split.length) items.push('<b>' + esc(cName(c)) + '</b> (Core) stops and starts: no ' + esc(cName(c)) + ' in week ' + r.split.map(dispW).join(', ') + '. Once a Core starts it should be worked on every week until it\u2019s finished.');
+      if (c.type !== 'Core' && r.apart > MAX_APART) items.push('<b>' + esc(cName(c)) + '</b> (' + c.type + ') has credits ' + r.apart + ' weeks apart. Electives should be no more than ' + MAX_APART + ' weeks apart.');
+    });
+    if (hasFilled) lastPauses.forEach(n => items.push(n));
+    el.style.display = items.length ? 'block' : 'none';
+    el.innerHTML = items.length ? '⚠ <b>Sequence check</b><ul>' + items.map(x => '<li>' + x + '</li>').join('') + '</ul><span class="muted">Usually fixed by moving a course higher or lower in the list, or choosing a different break-week course.</span>' : '';
+  }
+
+  function renderFillBtn() { $('fillBtn').textContent = hasFilled ? 'Refill planner' : 'Fill planner'; }
+
+  function renderAll() { renderCourses(); paint(); renderCounter(); renderBreaks(); renderSummary(); renderFillBtn(); renderSeq(); }
+
+  // ---------- Events: course list ----------
+  $('presetRow').addEventListener('click', e => {
+    const b = e.target.closest('[data-preset]'); if (!b) return;
+    if (b.dataset.preset === 'smart') mode = 'smart';
+    else { mode = 'pattern'; pattern = PRESETS[b.dataset.preset].slice(); }
+    renderPattern(); changed();
+  });
+  $('patternRow').addEventListener('change', e => {
+    const i = e.target.dataset.pat; if (i == null) return;
+    pattern[+i] = e.target.value; renderPattern(); changed();
+  });
+  $('patternRow').addEventListener('click', e => {
+    if (e.target.id !== 'toPattern') return;
+    e.preventDefault(); mode = 'pattern'; renderPattern(); changed();
+  });
+  document.querySelectorAll('input[name=side]').forEach(r => r.addEventListener('change', () => {
+    sideBySide = document.querySelector('input[name=side]:checked').value === 'side'; changed();
+  }));
+  $('courseBody').addEventListener('input', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    const c = byId(+tr.dataset.id), f = e.target.dataset.f;
+    if (f === 'name') { c.name = e.target.value; changed(); }
+    if (f === 'a' || f === 'b') {
+      const v = parseInt(e.target.value); if (isNaN(v)) return;
+      let nv = Math.max(0, Math.min(SEC, v));
+      const room = roomInPlan() - (listedTotal() - c[f]);
+      if (nv > c[f] && nv > room) {
+        nv = Math.max(c[f], Math.max(0, room));
+        e.target.value = nv;
+        warn('<b>No room for more credits.</b> This plan has room for ' + plural(roomInPlan(), 'credit') + ' and your list already uses them. Remove credits from another course before adding more here.');
+      }
+      c[f] = nv; tr.querySelector('[data-total]').textContent = total(c); changed();
+    }
+  });
+  $('courseBody').addEventListener('change', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    const c = byId(+tr.dataset.id), f = e.target.dataset.f;
+    if (f === 'a' || f === 'b') { e.target.value = c[f]; return; }
+    if (f === 'type') { c.type = e.target.value; changed(); }
+    if (f === 'star') { c.star = e.target.checked; changed(); }
+  });
+  $('courseBody').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const tr = b.closest('tr[data-id]'), i = courses.findIndex(c => c.id === +tr.dataset.id);
+    if (b.dataset.act === 'del') { const id = courses[i].id; courses.splice(i, 1); Object.keys(pins).forEach(k => { if (pins[k] === id) delete pins[k]; }); }
+    if (b.dataset.act === 'up' && i > 0) [courses[i - 1], courses[i]] = [courses[i], courses[i - 1]];
+    if (b.dataset.act === 'down' && i < courses.length - 1) [courses[i + 1], courses[i]] = [courses[i], courses[i + 1]];
+    renderCourses(); changed();
+  });
+  // Drag to reorder (mouse, touch and pen)
+  let drag = null;
+  $('courseBody').addEventListener('pointerdown', e => {
+    const h = e.target.closest('.handle'); if (!h) return;
+    e.preventDefault();
+    const row = h.closest('tr');
+    drag = { row, pid: e.pointerId };
+    h.setPointerCapture(e.pointerId);
+    row.classList.add('dragging'); document.body.classList.add('is-dragging');
+  });
+  $('courseBody').addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    const rows = [...$('courseBody').querySelectorAll('tr[data-id]')].filter(r => r !== drag.row);
+    let before = null;
+    for (const r of rows) { const b = r.getBoundingClientRect(); if (e.clientY < b.top + b.height / 2) { before = r; break; } }
+    if (before) { if (drag.row.nextSibling !== before) $('courseBody').insertBefore(drag.row, before); }
+    else if ($('courseBody').lastElementChild !== drag.row) $('courseBody').appendChild(drag.row);
+  });
+  const endDrag = e => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    drag.row.classList.remove('dragging'); document.body.classList.remove('is-dragging');
+    const order = [...$('courseBody').querySelectorAll('tr[data-id]')].map(r => +r.dataset.id);
+    drag = null;
+    if (order.join() !== courses.map(c => c.id).join()) { courses = order.map(byId); renderCourses(); changed(); }
+  };
+  $('courseBody').addEventListener('pointerup', endDrag);
+  $('courseBody').addEventListener('pointercancel', endDrag);
+
+  $('addCourse').addEventListener('click', () => {
+    const room = roomInPlan() - listedTotal();
+    if (room <= 0) { warn('<b>Can\u2019t add another course.</b> All ' + plural(roomInPlan(), 'credit') + ' in this plan are already used by your list. Remove credits from the list first.'); return; }
+    const a = Math.min(SEC, room), b = Math.min(SEC, room - a);
+    courses.push(newCourse('', 'Core', a, b, false)); renderCourses(); changed();
+    if (a + b < 10) warn('Only ' + plural(room, 'credit') + ' left in this plan, so the new course was set to ' + a + ' + ' + b + '.');
+    const inputs = document.querySelectorAll('#courseBody input[data-f=name]'); inputs[inputs.length - 1].focus();
+  });
+  $('clearCourses').addEventListener('click', () => { courses = []; pins = {}; renderCourses(); changed(); });
+
+  function matchType(p) {
+    const l = p.toLowerCase();
+    if (l.startsWith('m')) return 'Mandatory Elective';
+    if (l.startsWith('g') || l.startsWith('e') || l.indexOf('elect') >= 0) return 'General Elective';
+    return 'Core';
+  }
+  $('pasteAdd').addEventListener('click', () => {
+    let added = 0, merged = 0, cut = 0;
+    let room = roomInPlan() - listedTotal();
+    const fit = n => { const k = Math.max(0, Math.min(n, room)); cut += n - k; room -= k; return k; };
+    $('pasteBox').value.split(/\n/).forEach(raw => {
+      let line = raw.trim(); if (!line) return;
+      const star = /[*⭐]/.test(line); line = line.replace(/[*⭐]/g, '');
+      const parts = line.split(/[,\t;]/).map(s => s.trim()).filter(s => s.length);
+      if (!parts.length) return;
+      let name = parts[0], type = 'Core', typeGiven = false; const nums = [];
+      parts.slice(1).forEach(p => { if (/^\d+$/.test(p)) nums.push(+p); else { type = matchType(p); typeGiven = true; } });
+      let a, b;
+      const sec = name.match(/^(.*\S)\s+(A|B)$/i);
+      if (sec && nums.length === 1) { name = sec[1]; const n = Math.min(SEC, nums[0]); if (sec[2].toUpperCase() === 'A') { a = n; b = 0; } else { a = 0; b = n; } }
+      else if (nums.length >= 2) { a = Math.min(SEC, nums[0]); b = Math.min(SEC, nums[1]); }
+      else if (nums.length === 1) { a = Math.min(SEC, nums[0]); b = Math.min(SEC, Math.max(0, nums[0] - a)); }
+      else { a = SEC; b = SEC; }
+      const ex = courses.find(c => c.name.trim().toLowerCase() === name.toLowerCase());
+      if (ex && sec) { if (sec[2].toUpperCase() === 'A') { room += ex.a; ex.a = fit(a); } else { room += ex.b; ex.b = fit(b); } if (typeGiven) ex.type = type; if (star) ex.star = true; merged++; return; }
+      a = fit(a); b = fit(b);
+      if (a + b === 0) return;
+      courses.push(newCourse(name, type, a, b, star)); added++;
+    });
+    $('pasteMsg').textContent = added || merged ? 'Added ' + added + ' course' + (added === 1 ? '' : 's') + (merged ? ', updated ' + merged : '') + '.' : 'Nothing to add. Check the format above.';
+    if (added || merged) $('pasteBox').value = '';
+    if (cut) warn('<b>' + plural(cut, 'credit') + ' didn\u2019t fit.</b> This plan only has room for ' + plural(roomInPlan(), 'credit') + '. Remove credits from the list before adding more.');
+    renderCourses(); changed();
+  });
+
+  $('toastX').addEventListener('click', () => { $('toast').style.display = 'none'; });
+  // ---------- Events: fill / swap / breaks ----------
+  $('fillBtn').addEventListener('click', () => { weeks = readWeeks(); fill(); renderAll(); });
+  $('clearFill').addEventListener('click', () => {
+    weeks = readWeeks();
+    weeks.forEach(wk => wk.lines.forEach(ln => { if (ln.mode === 'auto' || ln.mode === 'locked') { ln.mode = ''; ln.text = ''; ln.cid = null; } }));
+    hasFilled = false; lastFill = null; lastPauses = []; pins = {}; renderAll();
+  });
+  $('swapBtn').addEventListener('click', () => { swapMode = !swapMode; swapSel = null; paint(); });
+  $('swapDone').addEventListener('click', () => { swapMode = false; swapSel = null; paint(); });
+  $('breakPanel').addEventListener('change', e => {
+    const w = e.target.dataset.pin; if (!w) return;
+    if (e.target.value) pins[w] = +e.target.value; else delete pins[w];
+    if (!hasFilled) { weeks = readWeeks(); fill(); }
+    changed();
+  });
+
+  // ---------- Events on the real planner ----------
+  document.addEventListener('input', e => {
+    const el = e.target;
+    if (!el.classList || !el.classList.contains('credit-line')) return;
+    const ln = lineFor(el);
+    ln.mode = el.value.trim() ? 'manual' : ''; ln.cid = null;
+    el.classList.remove('cf-auto', 'cf-locked'); el.style.removeProperty('--cfc');
+    weeks = readWeeks(); renderCounter();
+  });
+  document.addEventListener('change', e => {
+    const el = e.target;
+    if (el.classList && el.classList.contains('credit-line')) changed();
+  });
+  document.addEventListener('mousedown', e => {
+    const el = e.target;
+    if (!swapMode || !el.classList || !el.classList.contains('credit-line')) return;
+    const tr = el.closest('tr');
+    if (!tr || tr.getAttribute('data-skip') === '1') return;
+    e.preventDefault();
+    const ln = lineFor(el);
+    if (!swapSel) { swapSel = ln; paint(); return; }
+    if (swapSel === ln) { swapSel = null; paint(); return; }
+    const a = swapSel, b = ln;
+    ['text', 'mode', 'cid', 'done'].forEach(p => { const t = a[p]; a[p] = b[p]; b[p] = t; });
+    [a, b].forEach(l => { if (l.mode === 'auto') l.mode = 'locked'; });
+    swapSel = null; changed();
+  }, true);
+
+  // The ▼ menu on each line
+  window.__subjPick = function (sel) {
+    const el = sel.previousElementSibling;
+    const v = sel.value; sel.selectedIndex = 0;
+    if (!el) return;
+    const ln = lineFor(el);
+    if (v === '_custom') { ln.mode = ''; ln.cid = null; el.value = ''; el.classList.remove('cf-auto', 'cf-locked'); el.focus(); weeks = readWeeks(); renderCounter(); return; }
+    if (v === '_clear') { ln.mode = ''; ln.cid = null; el.value = ''; }
+    else if (v.indexOf('cf:') === 0) { ln.mode = 'locked'; ln.cid = +v.slice(3); }
+    else if (v) { ln.mode = 'manual'; ln.cid = null; el.value = v; }
+    changed();
+  };
+  // Called by the planner whenever a week's credits change (+ / –, spread buttons, Dual Enrollment toggles)
+  let ready = false;
+  window.__cfPlanChanged = function () { if (ready) changed(); };
+  window.__cfWarn = function (kind, target) {
+    if (kind === 'max') warn('A week can hold at most ' + MAX_WEEK + ' credits.');
+    else warn('<b>This plan is already at the ' + target + '-credit target.</b> Remove a credit from another week (–) before adding one here.');
+  };
+
+  // ---------- Copy list ----------
+  function listText() {
+    return courses.map(c => cName(c) + ', ' + ({ 'Core': 'core', 'Mandatory Elective': 'mandatory', 'General Elective': 'elective' })[c.type] + ', ' + c.a + ', ' + c.b + (c.star ? ' *' : '')).join('\n');
+  }
+  $('copyList').addEventListener('click', () => {
+    const t = listText();
+    if (!t) { warn('There are no courses in the list to copy yet.'); return; }
+    const done = () => warn('<b>Course list copied.</b> Save it in the student’s file. To use it again later, open a plan, choose “Paste a list” and paste it in.');
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (er) { warn('Couldn’t copy automatically. Select the list in the paste box and copy it.'); $('pasteBox').value = t; } ta.remove(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+  });
+
+  // ---------- Start ----------
+  weeks = readWeeks();
+  renderAll();
+  ready = true;
+}
+
 </script>
 </body>
 </html>
