@@ -5102,6 +5102,25 @@ function __creditFillerApp(CF) {
         cands = cands.filter(c => avail(c.id) <= run);
         if (!cands.length) return null;
       }
+      // How many of a stream's upcoming credit spots come before a long stretch with none (e.g. the 1-credit weeks)
+      const runOf = (lst, from, w0) => {
+        let i = from; while (i < lst.length && lst[i].wk.w < w0) i++;
+        let run = 0, prev = null, q = i;
+        for (; q < lst.length; q++) { const ai = actIdx[lst[q].wk.w]; if (prev != null && ai - prev > MAX_APART) break; if (ai !== prev) run++; prev = ai; }
+        const lastAct = Object.keys(actIdx).length - 1;
+        return { run, gap: q < lst.length || (prev != null && lastAct - prev > MAX_APART) };
+      };
+      if (sl.kind === 'core' && sl.lane === 0) {
+        // An elective in progress that would get stuck once the 1-credit weeks start: let this Core spot help
+        // finish it first (a lighter week) instead of starting a long Core that would block it.
+        const me = runOf(list, i0, sl.wk.w);
+        const es = Object.values(streams).find(x => x.kind === 'elective' && x.cur != null && avail(x.cur) > 0);
+        if (me.gap && es) {
+          const er = runOf(es.slots, 0, sl.wk.w);
+          const need = avail(es.cur);
+          if (need > er.run && need <= er.run + me.run) return null;
+        }
+      }
       if (sl.kind === 'elective') {
         // Don't start a new elective in the last week or two before a long stretch with no elective spot
         // (for example right before the 1-credit weeks): it would sit unfinished for weeks. That week gets
@@ -5110,7 +5129,7 @@ function __creditFillerApp(CF) {
         for (; q < list.length; q++) { const ai = actIdx[list[q].wk.w]; if (prev != null && ai - prev > MAX_APART) break; if (ai !== prev) run++; prev = ai; }
         const lastAct = Object.keys(actIdx).length - 1;
         const gapAhead = q < list.length || (prev != null && lastAct - prev > MAX_APART);
-        if (gapAhead && run <= 2) {
+        if (gapAhead && run <= 3) {
           const short = cands.filter(c => avail(c.id) <= run);
           if (short.length) cands = short;
           else if (Object.values(streams).some(x => x.kind === 'core' && x.cur != null && avail(x.cur) > 0)) return null;
@@ -5202,7 +5221,13 @@ function __creditFillerApp(CF) {
     }
     function breakPick(sl) {
       const pc = pins[sl.wk.w] != null ? byId(pins[sl.wk.w]) : null;
-      if (pc && rem[pc.id] > 0) return pc;
+      if (pc && rem[pc.id] > 0) {
+        // A Core picked for a break week is only used if it doesn't split another Core that's in progress.
+        const busy = kindOf(pc) === 'core' ? coreBusy() : null;
+        if (busy != null && busy !== pc.id && avail(busy) > 0 && pc.id !== busy) {
+          if (!sl.wk._noted) { sl.wk._noted = true; notes.push('<b>' + esc(cName(pc)) + '</b> wasn\u2019t used in ' + sl.wk.bi.name + ' (week ' + dispW(sl.wk.w) + ') because <b>' + esc(cName(byId(busy))) + '</b> (Core) is in progress and Cores are never split. The \u2b50 courses are used instead. Move ' + esc(cName(pc)) + ' to the top of the Cores in the list, or pick an elective.'); }
+        } else return pc;
+      }
       for (const st of Object.values(streams)) { const id = st.cur; if (id != null && rem[id] > 0 && byId(id).star) return byId(id); }
       const S = courses.find(c => c.star && rem[c.id] > 0 && !claimed.has(c.id)) || courses.find(c => c.star && rem[c.id] > 0);
       if (!S) return null;
@@ -5362,7 +5387,8 @@ function __creditFillerApp(CF) {
         const planned = wk.lines.slice(0, Math.max(wk.credits, 0)).map(l => l.text).filter(Boolean).map(esc).join('<br>') || '<span class="muted">–</span>';
         let pick;
         if (wk.bi.kind === 'closed' && (wk.skip || !wk.credits)) pick = '<b style="color:#b71c1c;">School closed</b>';
-        else if (wk.bi.kind === 'closed') pick = '<span style="color:#b71c1c;">School closed. The student is working through this week without teacher support.</span>';
+        else if (wk.bi.kind === 'closed') pick = '<select data-pin="' + wk.w + '">' + courseOptions(pins[wk.w] != null ? pins[wk.w] : null, 'Automatic (⭐ courses)') + '</select>' +
+          '<div style="color:#b71c1c;font-size:0.8rem;margin-top:3px;">School closed: the student is working through this week without teacher support.</div>';
         else if (wk.skip) pick = '<span class="muted">Skipped (0 credits)</span>';
         else if (!wk.credits) pick = '<span class="muted">0 credits this week</span>';
         else pick = '<select data-pin="' + wk.w + '">' + courseOptions(pins[wk.w] != null ? pins[wk.w] : null, 'Automatic (⭐ courses)') + '</select>';
