@@ -514,8 +514,8 @@ select {
             <label for="nextYearSkipThanksgiving" id="labelNextYearThanksgiving">Skip Thanksgiving Week (Week 22)</label>
           </div>
           <div class="holiday-option">
-            <input type="checkbox" id="nextYearSkipWinter" checked disabled>
-            <label for="nextYearSkipWinter" id="labelNextYearWinter">Winter Break (Weeks 26–27) – School closed, always skipped</label>
+            <input type="checkbox" id="nextYearSkipWinter">
+            <label for="nextYearSkipWinter" id="labelNextYearWinter">Skip Winter Break (Weeks 26–27)</label>
           </div>
           <div class="holiday-option">
             <input type="checkbox" id="nextYearSkipSpring">
@@ -545,8 +545,8 @@ select {
         <label for="skipThanksgiving" id="labelThanksgiving">Skip Thanksgiving Week (Week 22)</label>
       </div>
       <div class="holiday-option" id="winterOption">
-        <input type="checkbox" id="skipWinter" checked disabled>
-        <label for="skipWinter" id="labelWinter">Winter Break (Weeks 26–27) – School closed, always skipped</label>
+        <input type="checkbox" id="skipWinter">
+        <label for="skipWinter" id="labelWinter">Skip Winter Break (Weeks 26–27)</label>
       </div>
       <div class="holiday-option" id="springOption">
         <input type="checkbox" id="skipSpring">
@@ -778,8 +778,9 @@ try {
 // BREAK WEEKS
 // Thanksgiving (Week 22), Spring (Week 41) and Summer (the last three weeks
 // of the school year, until July 1) have LIMITED teacher appointments.
-// Winter Break (Weeks 26-27) is the only break where school is CLOSED, so it
-// is always skipped. Change the week numbers here if the calendar changes.
+// Winter Break (Weeks 26-27) is the only break where school is CLOSED (no
+// teacher support); skipping it is still optional, so students can choose to
+// work through it. Change the week numbers here if the calendar changes.
 // =====================================================
 const BREAK_WEEKS = { thanksgiving: 22, winter: [26, 27], spring: 41, summerLength: 3 };
 function getBreakInfo(week, totalWeeks) {
@@ -997,7 +998,7 @@ function switchYear(mode) {
   // Clear results and inputs
   document.getElementById("totalCredits").value = "";
   document.getElementById("skipThanksgiving").checked = false;
-  document.getElementById("skipWinter").checked = true;   // school closed: always skipped
+  document.getElementById("skipWinter").checked = false;
   document.getElementById("skipSpring").checked = false;
   document.getElementById("skipSummer").checked = false;
   resetUserToggledSkips();
@@ -1153,7 +1154,6 @@ const translations = {
   "Which week do you want to finish by?": "\u00bfEn qu\u00e9 semana quieres terminar?",
   "Skip Thanksgiving Week (Week 22)": "Saltar semana - Acci\u00f3n de Gracias (Semana 22)",
   "Skip Winter Break (Weeks 26\u201327)": "Saltar vacaciones - Invierno (Semanas 26\u201327)",
-  "Winter Break (Weeks 26\u201327) \u2013 School closed, always skipped": "Vacaciones de invierno (Semanas 26\u201327) \u2013 Escuela cerrada, siempre se salta",
   "Skip Spring Week (Week 41)": "Saltar semana - Primavera (Semana 41)",
   "Calculate": "Calcular",
   "Disclaimer:": "Aviso:",
@@ -1215,7 +1215,7 @@ function showLanguagePrompt() {
     document.getElementById("startWeek").selectedIndex = 0;
     document.getElementById("endWeek").selectedIndex = 0;
     document.getElementById("skipThanksgiving").checked = false;
-    document.getElementById("skipWinter").checked = true;   // school closed: always skipped
+    document.getElementById("skipWinter").checked = false;
     document.getElementById("skipSpring").checked = false;
     document.getElementById("skipSummer").checked = false;
     resetUserToggledSkips();
@@ -1589,12 +1589,10 @@ function resetCrossYear() {
     selNext.value = String(Math.min(46, selNext.options.length));
   }
   // Reset next-year skip checkboxes
-  ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipSpring", "nextYearSkipSummer"].forEach(function(id) {
+  ["nextYearSkipWeek1Partial", "nextYearSkipThanksgiving", "nextYearSkipWinter", "nextYearSkipSpring", "nextYearSkipSummer"].forEach(function(id) {
     const cb = document.getElementById(id);
     if (cb) cb.checked = false;
   });
-  const nyWinter = document.getElementById("nextYearSkipWinter");
-  if (nyWinter) nyWinter.checked = true;   // school closed: always skipped
   clearNextYearCustomSkipWeeks();
   const w1opt = document.getElementById("nextYearWeek1PartialOption");
   if (w1opt) w1opt.style.display = "none";
@@ -1660,8 +1658,6 @@ function updateBreakNotices() {
   if (lbl) lbl.textContent = isSpanish ? 'Saltar semanas de verano (Semanas ' + range(sw) + ')' : 'Skip Summer Weeks (Weeks ' + range(sw) + ')';
   const lblN = document.getElementById('labelNextYearSummer');
   if (lblN) lblN.textContent = isSpanish ? 'Saltar semanas de verano (Semanas ' + range(swNext) + ')' : 'Skip Summer Weeks (Weeks ' + range(swNext) + ')';
-  const lblW = document.getElementById('labelWinter');
-  if (lblW) lblW.textContent = isSpanish ? 'Vacaciones de invierno (Semanas 26\u201327) \u2013 Escuela cerrada, siempre se salta' : 'Winter Break (Weeks 26\u201327) \u2013 School closed, always skipped';
   const notice = (s) => isSpanish
     ? '<b>Nota:</b> La semana de Acci\u00f3n de Gracias (Semana 22), la semana de primavera (Semana 41) y las semanas de verano (Semanas ' + range(s) + ') tienen <b>citas limitadas con maestros</b>. Es posible que no haya apoyo de maestros todos los d\u00edas. Durante las vacaciones de invierno (Semanas 26\u201327) <b class="closed">la escuela est\u00e1 cerrada</b>.'
     : '<b>Heads up:</b> Thanksgiving week (Week 22), Spring week (Week 41) and the Summer weeks (Weeks ' + range(s) + ') have <b>limited teacher appointments available</b>. Teacher support may not be available every day. During Winter Break (Weeks 26\u201327) <b class="closed">school is closed</b>.';
@@ -1675,7 +1671,7 @@ function updateNextYearSkipLabels() {
   const lblS = document.getElementById("labelNextYearSpring");
   const lblTitle = document.getElementById("nextYearSkipTitle");
   if (lblT) lblT.textContent = isSpanish ? "Saltar semana - Acción de Gracias (Semana 22)" : "Skip Thanksgiving Week (Week 22)";
-  if (lblW) lblW.textContent = isSpanish ? "Vacaciones de invierno (Semanas 26–27) – Escuela cerrada, siempre se salta" : "Winter Break (Weeks 26–27) – School closed, always skipped";
+  if (lblW) lblW.textContent = isSpanish ? "Saltar vacaciones - Invierno (Semanas 26–27)" : "Skip Winter Break (Weeks 26–27)";
   updateBreakNotices();
   if (lblS) lblS.textContent = isSpanish ? "Saltar semana - Primavera (Semana 41)" : "Skip Spring Week (Week 41)";
   if (lblTitle) lblTitle.innerHTML = isSpanish
@@ -2353,10 +2349,8 @@ function autoSetHealthySkips() {
     const nextCustom = getNextYearCustomSkipWeeks();
     baselineSkips += (nextW1 ? 1 : 0) + nextCustom.length;
   }
-  // Winter Break is always skipped (school closed), and checked Summer weeks
-  // are skipped too, so neither is part of the holiday budget below.
+  // Checked Summer weeks are skipped too (they're not part of the holiday budget below).
   const inPlan = w => w >= startWeek && w <= endWeek;
-  BREAK_WEEKS.winter.forEach(w => { if (inPlan(w)) baselineSkips++; if (crossYearData.active && inPlan(totalCurrent + w)) baselineSkips++; });
   if (document.getElementById('skipSummer')?.checked) getSummerWeeks(schoolYearData.totalWeeks).forEach(w => { if (inPlan(w)) baselineSkips++; });
   if (crossYearData.active && document.getElementById('nextYearSkipSummer')?.checked) {
     getSummerWeeks(buildExtendedMap(crossYearData).totalNext).forEach(w => { if (inPlan(totalCurrent + w)) baselineSkips++; });
@@ -2383,6 +2377,10 @@ function autoSetHealthySkips() {
   // current year is preferred over next year so the student gets the
   // sooner relief first.
   const candidates = [
+    { id: 'skipWinter',               key: 'winter',              weeks: 2,
+      applicable: inRange(26, false) && inRange(27, false) },
+    { id: 'nextYearSkipWinter',       key: 'nextYearWinter',      weeks: 2,
+      applicable: crossYearData.active && inRange(26, true) && inRange(27, true) },
     { id: 'skipThanksgiving',         key: 'thanksgiving',        weeks: 1,
       applicable: inRange(22, false) },
     { id: 'nextYearSkipThanksgiving', key: 'nextYearThanksgiving', weeks: 1,
@@ -2438,7 +2436,7 @@ function calculateCredits() {
   autoSetHealthySkips();
 
   const skipThanksgiving = document.getElementById("skipThanksgiving").checked;
-  const skipWinter = true;   // Winter Break: school closed, always skipped
+  const skipWinter = document.getElementById("skipWinter").checked;
   const skipSpring = document.getElementById("skipSpring").checked;
 
   // Cross-year: extend endWeek into next year
@@ -2473,7 +2471,7 @@ function calculateCredits() {
     if (nextYearSkipW1) allSkips.push(tc + 1);
     // Next year's holiday skips
     if (document.getElementById("nextYearSkipThanksgiving")?.checked) allSkips.push(tc + 22);
-    allSkips.push(tc + 26); allSkips.push(tc + 27);   // Winter Break: school closed, always skipped
+    if (document.getElementById("nextYearSkipWinter")?.checked) { allSkips.push(tc + 26); allSkips.push(tc + 27); }
     if (document.getElementById("nextYearSkipSpring")?.checked) allSkips.push(tc + 41);
     if (document.getElementById("nextYearSkipSummer")?.checked) getSummerWeeks(extMap.totalNext).forEach(function(w) { allSkips.push(tc + w); });
     // Next year's custom skips
@@ -5363,7 +5361,8 @@ function __creditFillerApp(CF) {
       rows.map(wk => {
         const planned = wk.lines.slice(0, Math.max(wk.credits, 0)).map(l => l.text).filter(Boolean).map(esc).join('<br>') || '<span class="muted">–</span>';
         let pick;
-        if (wk.bi.kind === 'closed') pick = '<b style="color:#b71c1c;">School closed</b>';
+        if (wk.bi.kind === 'closed' && (wk.skip || !wk.credits)) pick = '<b style="color:#b71c1c;">School closed</b>';
+        else if (wk.bi.kind === 'closed') pick = '<span style="color:#b71c1c;">School closed. The student is working through this week without teacher support.</span>';
         else if (wk.skip) pick = '<span class="muted">Skipped (0 credits)</span>';
         else if (!wk.credits) pick = '<span class="muted">0 credits this week</span>';
         else pick = '<select data-pin="' + wk.w + '">' + courseOptions(pins[wk.w] != null ? pins[wk.w] : null, 'Automatic (⭐ courses)') + '</select>';
